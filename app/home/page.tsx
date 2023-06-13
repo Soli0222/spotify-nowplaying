@@ -56,6 +56,14 @@ const HomePage = () => {
           album_enc: encodeURIComponent(`${data['item']['album']['name']} / ${ArackArtist}\n#NowPlaying`),
         }
         setTrackData(fetchedData);
+
+        const shareURLData: ShareURL = {
+          tweet_track: `https://twitter.com/intent/tweet?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
+          tweet_album: `https://twitter.com/intent/tweet?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
+          psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
+          psr_album: `https://mi.soli0222.com/share?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
+        };
+        setShareURL(shareURLData);
       }
       else if (data["currently_playing_type"] == "episode") {
         const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing?market=JP&additional_types=episode', { headers });
@@ -74,22 +82,19 @@ const HomePage = () => {
           album_enc: encodeURIComponent(`${data['item']['show']['name']} / ${data['item']['show']['publisher']}\n#NowPlaying`),
         }
         setTrackData(fetchedData);
+
+        const shareURLData: ShareURL = {
+          tweet_track: `https://twitter.com/intent/tweet?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
+          tweet_album: `https://twitter.com/intent/tweet?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
+          psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
+          psr_album: `https://mi.soli0222.com/share?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
+        };
+        setShareURL(shareURLData);
       }
-      
-      const fetchedData: ShareURL ={
-        tweet_track: trackData ? `https://twitter.com/intent/tweet?url=${trackData.track_url}&text=${trackData?.track_enc}`: '',
-        tweet_album: trackData ? `https://twitter.com/intent/tweet?url=${trackData.album_url}&text=${trackData?.album_enc}`: '',
-        psr_track: trackData ? `https://mi.soli0222.com/share?url=${trackData.track_url}&text=${trackData?.track_enc}`: '',
-        psr_album: trackData ? `https://mi.soli0222.com/share?url=${trackData.album_url}&text=${trackData?.album_enc}`: '',
-      }
-      setShareURL(fetchedData);
-      
-      //const trackEnc = encodeURIComponent(`${trackData.track_name} / ${trackData.artist_name}\n#NowPlaying`);
-      
     };
 
     fetchData();
-  },[trackData]);
+  },[]);
   
   return (
     <div>
