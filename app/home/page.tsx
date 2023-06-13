@@ -16,9 +16,16 @@ type TrackData = {
   track_enc: string;
   album_enc: string;
 }
+type ShareURL = {
+  tweet_track: string;
+  tweet_album: string;
+  psr_track: string;
+  psr_album: string;
+}
 
 const HomePage = () => {
   const [trackData, setTrackData] = useState<TrackData | null>(null);
+  const [shareURL, setShareURL] = useState<ShareURL | null>(null);
   useEffect(() => {
     const fetchData = async () => {
       const access_token = sessionStorage.getItem('access_token') || '';
@@ -29,7 +36,6 @@ const HomePage = () => {
 
       const response = await fetch('https://api.spotify.com/v1/me/player?market=JP', { headers });
       const data = await response.json();
-      console.log(data);
 
       //ここからトラックデータ系の処理
       if (data["currently_playing_type"] == "track") {
@@ -70,12 +76,20 @@ const HomePage = () => {
         setTrackData(fetchedData);
       }
       
+      const fetchedData: ShareURL ={
+        tweet_track: trackData ? `https://twitter.com/intent/tweet?url=${trackData.track_url}&text=${trackData?.track_enc}`: '',
+        tweet_album: trackData ? `https://twitter.com/intent/tweet?url=${trackData.album_url}&text=${trackData?.album_enc}`: '',
+        psr_track: trackData ? `https://mi.soli0222.com/share?url=${trackData.track_url}&text=${trackData?.track_enc}`: '',
+        psr_album: trackData ? `https://mi.soli0222.com/share?url=${trackData.album_url}&text=${trackData?.album_enc}`: '',
+      }
+      setShareURL(fetchedData);
+      
       //const trackEnc = encodeURIComponent(`${trackData.track_name} / ${trackData.artist_name}\n#NowPlaying`);
       
     };
 
     fetchData();
-  },[]);
+  },[trackData]);
   
   return (
     <div>
@@ -91,7 +105,11 @@ const HomePage = () => {
           <p>Album URL: {trackData.album_url}</p>
           <p>Jacket URL: {trackData.jacket_url}</p>
           <p>Track Encode: {trackData.track_enc}</p>
-          <p>Album Encode: {trackData.album_enc}</p>
+          <p>Album Encode: {trackData.album_enc}</p><br></br>
+          <a href={shareURL?.tweet_track} target="_blank">Tweet Track</a><br></br>
+          <a href={shareURL?.tweet_album} target="_blank">Tweet Alubm</a><br></br>
+          <a href={shareURL?.psr_track} target="_blank">Note(Polestar) Track</a><br></br>
+          <a href={shareURL?.psr_album} target="_blank">Note(Polestar) Album</a><br></br>
         </div>
       )}
     </div>
