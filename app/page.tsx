@@ -1,5 +1,15 @@
-import Link from 'next/link'
- 
-export default function index() {
-  return <Link href="/login">Login</Link>
+"use client";
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+export default function Index() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // ページがアクセスされた瞬間に/loginに遷移
+    router.push('/login');
+  }, []);
+
+  return null;
 }

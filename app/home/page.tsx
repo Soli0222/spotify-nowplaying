@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from 'next/navigation';
 import { useState ,useEffect } from 'react';
 
 type Artist = {
@@ -9,23 +10,16 @@ type TrackData = {
   track_name: string;
   track_url: string;
   artist_name: string;
-  album_name: string;
-  album_artist: string;
-  album_url: string;
-  jacket_url: string;
   track_enc: string;
-  album_enc: string;
 }
 type ShareURL = {
-  tweet_track: string;
-  tweet_album: string;
   psr_track: string;
-  psr_album: string;
 }
 
 const HomePage = () => {
   const [trackData, setTrackData] = useState<TrackData | null>(null);
   const [shareURL, setShareURL] = useState<ShareURL | null>(null);
+  const router = useRouter();
   useEffect(() => {
     const fetchData = async () => {
       const access_token = sessionStorage.getItem('access_token') || '';
@@ -41,27 +35,17 @@ const HomePage = () => {
       if (data["currently_playing_type"] == "track") {
         const TrackArtists: Artist[] = data['item']['artists'];
         const TrackArtist = TrackArtists.map(artist => artist['name']).join(', ');
-        const Alubmartists: Artist[] = data['item']['album']['artists'];
-        const ArackArtist = Alubmartists.map(artist => artist['name']).join(', ');
 
         const fetchedData: TrackData = {
           track_name: data['item']['name'],
           track_url: data['item']['external_urls']['spotify'],
           artist_name: TrackArtist,
-          album_name: data['item']['album']['name'],
-          album_artist: ArackArtist,
-          album_url: data['item']['album']['external_urls']['spotify'],
-          jacket_url: data['item']['album']['images'][0]['url'],
           track_enc: encodeURIComponent(`${data['item']['name']} / ${TrackArtist}\n#NowPlaying`),
-          album_enc: encodeURIComponent(`${data['item']['album']['name']} / ${ArackArtist}\n#NowPlaying`),
         }
         setTrackData(fetchedData);
 
         const shareURLData: ShareURL = {
-          tweet_track: `https://twitter.com/intent/tweet?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
-          tweet_album: `https://twitter.com/intent/tweet?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
-          psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
-          psr_album: `https://mi.soli0222.com/share?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
+          psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`
         };
         setShareURL(shareURLData);
       }
@@ -74,51 +58,27 @@ const HomePage = () => {
           track_name: data['item']['name'],
           track_url: data['item']['external_urls']['spotify'],
           artist_name: data['item']['show']['name'],
-          album_name: data['item']['show']['name'],
-          album_artist: data['item']['show']['publisher'],
-          album_url: 'None',
-          jacket_url: data['item']['images'][0]['url'],
           track_enc: encodeURIComponent(`${data['item']['name']} / ${data['item']['show']['name']}\n#NowPlaying`),
-          album_enc: encodeURIComponent(`${data['item']['show']['name']} / ${data['item']['show']['publisher']}\n#NowPlaying`),
         }
         setTrackData(fetchedData);
 
         const shareURLData: ShareURL = {
-          tweet_track: `https://twitter.com/intent/tweet?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
-          tweet_album: `https://twitter.com/intent/tweet?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
           psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
-          psr_album: `https://mi.soli0222.com/share?url=${fetchedData.album_url}&text=${fetchedData.album_enc}`,
         };
         setShareURL(shareURLData);
       }
     };
-
+    
     fetchData();
   },[]);
+
+  useEffect(() => {
+    if (shareURL) {
+      router.push(shareURL.psr_track);
+    }
+  }, [shareURL]);
   
-  return (
-    <div>
-      {/* trackDataが存在する場合にのみ、情報を表示 */}
-      {trackData && (
-        <div>
-          <h2>Track Data:</h2>
-          <p>Track Name: {trackData.track_name}</p>
-          <p>Track URL: {trackData.track_url}</p>
-          <p>Artist Name: {trackData.artist_name}</p>
-          <p>Album Name: {trackData.album_name}</p>
-          <p>Album Artist: {trackData.album_artist}</p>
-          <p>Album URL: {trackData.album_url}</p>
-          <p>Jacket URL: {trackData.jacket_url}</p>
-          <p>Track Encode: {trackData.track_enc}</p>
-          <p>Album Encode: {trackData.album_enc}</p><br></br>
-          <a href={shareURL?.tweet_track} target="_blank">Tweet Track</a><br></br>
-          <a href={shareURL?.tweet_album} target="_blank">Tweet Alubm</a><br></br>
-          <a href={shareURL?.psr_track} target="_blank">Note(Polestar) Track</a><br></br>
-          <a href={shareURL?.psr_album} target="_blank">Note(Polestar) Album</a><br></br>
-        </div>
-      )}
-    </div>
-  );
+  return null;
 };
 
 export default HomePage;
