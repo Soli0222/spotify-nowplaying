@@ -19,6 +19,7 @@ type ShareURL = {
 const HomePage = () => {
   const [trackData, setTrackData] = useState<TrackData | null>(null);
   const [shareURL, setShareURL] = useState<ShareURL | null>(null);
+  const [error, setError] = useState<string | null>(null); // エラーメッセージの状態を追加
   const router = useRouter();
   useEffect(() => {
     const fetchData = async () => {
@@ -29,8 +30,21 @@ const HomePage = () => {
       };
 
       const response = await fetch('https://api.spotify.com/v1/me/player?market=JP', { headers });
-      const data = await response.json();
 
+      if (response.status !== 200) {
+        let statustext
+        if (response.status === 204) {
+          statustext = "曲が再生されていません。曲を再生してからリロードしてください。" 
+        }
+        else {
+          statustext = "にゃんらかのエラーです"
+        }
+        // ステータスコードが200以外の場合、エラーメッセージを表示して処理を中断
+        setError(`API Error: StatusCode ${response.status} - ${statustext}`);
+        return;
+      }
+
+      const data = await response.json();
       //ここからトラックデータ系の処理
       if (data["currently_playing_type"] == "track") {
         const TrackArtists: Artist[] = data['item']['artists'];
@@ -78,7 +92,11 @@ const HomePage = () => {
     }
   }, [shareURL]);
   
-  return null;
+  return (
+    <div>
+      {error && <p>{error}</p>}
+    </div>
+  )
 };
 
 export default HomePage;
