@@ -8,7 +8,7 @@ const LoginPage = () => {
     const authUrl = 'https://accounts.spotify.com/authorize';
     const scope = 'user-read-currently-playing user-read-playback-state';
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
-    const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI_ONE || '';
+    const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI_NOTE || '';
   
     useEffect(() => {
       const params = new URLSearchParams({
