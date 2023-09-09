@@ -50,16 +50,16 @@ const HomePage = () => {
         const TrackArtists: Artist[] = data['item']['artists'];
         const TrackArtist = TrackArtists.map(artist => artist['name']).join(', ');
 
-        const fetchedData: TrackData = {
+        const trackData: TrackData = {
           track_name: data['item']['name'],
           track_url: data['item']['external_urls']['spotify'],
           artist_name: TrackArtist,
           track_enc: encodeURIComponent(`${data['item']['name']} / ${TrackArtist}\n#NowPlaying #PsrPlaying`),
         }
-        setTrackData(fetchedData);
+        setTrackData(trackData);
 
         const shareURLData: ShareURL = {
-          psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`
+          psr_track: `https://mi.soli0222.com/share?url=${trackData.track_url}&text=${trackData.track_enc}`
         };
         setShareURL(shareURLData);
       }
@@ -68,16 +68,16 @@ const HomePage = () => {
         const data = await response.json();
         //console.log(data)
 
-        const fetchedData: TrackData = {
+        const trackData: TrackData = {
           track_name: data['item']['name'],
           track_url: data['item']['external_urls']['spotify'],
           artist_name: data['item']['show']['name'],
           track_enc: encodeURIComponent(`${data['item']['name']} / ${data['item']['show']['name']}\n#NowPlaying`),
         }
-        setTrackData(fetchedData);
+        setTrackData(trackData);
 
         const shareURLData: ShareURL = {
-          psr_track: `https://mi.soli0222.com/share?url=${fetchedData.track_url}&text=${fetchedData.track_enc}`,
+          psr_track: `https://mi.soli0222.com/share?url=${trackData.track_url}&text=${trackData.track_enc}`,
         };
         setShareURL(shareURLData);
       }
