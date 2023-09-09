@@ -8,7 +8,7 @@ const CallbackPage = () => {
 	const query = useSearchParams()
 	const code = query.get('code') as string
   const tokenUrl = 'https://accounts.spotify.com/api/token';
-  const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI || '';
+  const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI_TWEET || '';
   const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
   const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '';
 
@@ -39,7 +39,7 @@ const CallbackPage = () => {
 			sessionStorage.setItem('refresh_token', refreshToken);
 
       // リダイレクト
-      router.push('/home');
+      router.push('/tweet/home');
     };
 
     fetchData();
