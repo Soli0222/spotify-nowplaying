@@ -8,7 +8,7 @@ export default function Index() {
 
   useEffect(() => {
     // ページがアクセスされた瞬間に/loginに遷移
-    router.push('/login');
+    router.push('/note/login');
   }, []);
 
   return null;
