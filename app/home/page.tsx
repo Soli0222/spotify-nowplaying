@@ -54,7 +54,7 @@ const HomePage = () => {
           track_name: data['item']['name'],
           track_url: data['item']['external_urls']['spotify'],
           artist_name: TrackArtist,
-          track_enc: encodeURIComponent(`${data['item']['name']} / ${TrackArtist}\n#NowPlaying`),
+          track_enc: encodeURIComponent(`${data['item']['name']} / ${TrackArtist}\n#NowPlaying #PsrPlaying`),
         }
         setTrackData(fetchedData);
 
