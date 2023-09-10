@@ -3,13 +3,25 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function Index() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // ページがアクセスされた瞬間に/loginに遷移
-    router.push('/tweet/login');
-  }, []);
-
-  return null;
-}
+const LoginPage = () => {
+    const router = useRouter();
+    const authUrl = 'https://accounts.spotify.com/authorize';
+    const scope = 'user-read-currently-playing user-read-playback-state';
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
+    const redirectUri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI_TWEET || '';
+  
+    useEffect(() => {
+      const params = new URLSearchParams({
+        client_id: clientId,
+        response_type: 'code',
+        redirect_uri: redirectUri,
+        scope: scope,
+      });
+  
+      router.push(`${authUrl}?${params.toString()}`);
+    }, []);
+  
+    return null;
+  };
+  
+  export default LoginPage;
