@@ -13,13 +13,27 @@
 1. このリポジトリをクローンします。
 
    ```bash
-   git clone https://github.com/your-username/spotify-now-playing.git
+   git clone https://github.com/Soli0222/spotify-now-playing.git
    ```
 
 2. 必要なモジュールをインストールします。
 
    ```bash
-   npm install
+   go mod download
+   ```
+
+3. ``.env``ファイルを編集し、環境変数を設定します
+
+   ```bash
+   cp .env.example
+   ```
+
+   ```.env
+   PORT=8080  //起動するポート番号
+   SPOTIFY_CLIENT_ID= //クライアントID
+   SPOTIFY_CLIENT_SECRET= //クライアントシークレット
+   SPOTIFY_REDIRECT_URI_NOTE= //noteのリダイレクトURL
+   SPOTIFY_REDIRECT_URI_TWEET= //tweetのリダイレクトURL
    ```
 
 ## 実行
@@ -27,14 +41,7 @@
 開発環境でアプリケーションを実行するには、以下のコマンドを使用します。
 
 ```bash
-npm run dev
-```
-
-アプリケーションはローカルでポート3000番で実行されます。  
-ポート番号を変更して実行したい場合は以下のようにします。
-
-```bash
-PORT=3500 npm run dev
+go run main.go
 ```
 
 ## ビルド
@@ -42,5 +49,5 @@ PORT=3500 npm run dev
 アプリケーションを本番環境用にビルドするには、以下のコマンドを使用します。
 
 ```bash
-npm run build
+go build
 ```
