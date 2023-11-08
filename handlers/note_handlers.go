@@ -4,51 +4,62 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"spotify-nowplaying/modules"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/labstack/echo/v4"
 )
 
-func NoteHomeHandler(w http.ResponseWriter, r *http.Request) {
+func NoteHomeHandler(c echo.Context) error {
+	cookie, err := c.Cookie("access_token")
+	if err != nil {
+		return err
+	}
+
+	access_token := cookie.Value
+	spotifyEndpoint := "https://api.spotify.com/v1/me/player?market=JP"
+
+	resp, err := resty.New().R().
+		SetHeader("Authorization", "Bearer "+access_token).
+		SetHeader("Accept-Language", "ja").
+		Get(spotifyEndpoint)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	redirectURL := (modules.GetReturnURL(resp, "Misskey"))
+
+	statusCode := resp.StatusCode()
+	if statusCode != 200 {
+		statusText := http.StatusText(statusCode)
+		return c.String(http.StatusOK, fmt.Sprintf("%d", statusCode)+": "+statusText)
+	}
+
+	return c.Redirect(http.StatusFound, redirectURL)
 
 }
 
-func NoteLoginHandler(w http.ResponseWriter, r *http.Request) {
+func NoteLoginHandler(c echo.Context) error {
 	authURL := "https://accounts.spotify.com/authorize"
 	scope := "user-read-currently-playing user-read-playback-state"
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI_NOTE")
 
 	redirectURL := fmt.Sprintf("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s", authURL, clientID, redirectURI, scope)
-	http.Redirect(w, r, redirectURL, http.StatusFound)
+
+	return c.Redirect(http.StatusFound, redirectURL)
 }
 
-func NoteCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
+func NoteCallbackHandler(c echo.Context) error {
+	code := c.QueryParam("code")
+	fmt.Println("callback")
 
-	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-	redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI_NOTE")
-	tokenURL := "https://accounts.spotify.com/api/token"
-
-	request, err := http.NewRequest("POST", tokenURL, nil)
-	if err != nil {
-		http.Error(w, "Failed to create request", http.StatusInternalServerError)
-		return
+	if code != "" {
+		modules.CallbackHandler(c, code, "Misskey")
+		return c.Redirect(http.StatusFound, "/note/home")
+	} else {
+		return c.String(http.StatusBadRequest, "Code parameter is missing.")
 	}
 
-	request.SetBasicAuth(clientID, clientSecret)
-
-	params := request.URL.Query()
-	params.Add("grant_type", "authorization_code")
-	params.Add("code", code)
-	params.Add("redirect_uri", redirectURI)
-	request.URL.RawQuery = params.Encode()
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		http.Error(w, "Failed to make request", http.StatusInternalServerError)
-		return
-	}
-	defer response.Body.Close()
-
-	http.Redirect(w, r, "/note/home", http.StatusFound)
 }
