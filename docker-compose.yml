@@ -1,0 +1,8 @@
+version: '3'
+services:
+  app:
+    image: soli0222/spotify-nowplaying:latest
+    platform: linux/amd64
+    volumes:
+      - './.env:/app/.env:ro'
+    restart: always
