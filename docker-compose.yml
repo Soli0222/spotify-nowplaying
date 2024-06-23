@@ -6,5 +6,5 @@ services:
     volumes:
       - './.env:/app/.env:ro'
     ports:
-      - 3500:3500
+      - 8080:8080
     restart: always
