@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"os"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -74,7 +75,8 @@ func GetReturnURL(resp *resty.Response, platform string) string {
 	}
 
 	if platform == "Misskey" {
-		shareURLData = fmt.Sprintf("https://mi.soli0222.com/share?url=%s&text=%s", trackData.TrackURL, trackData.TrackEnc)
+		serverURI := os.Getenv("SERVER_URI")
+		shareURLData = fmt.Sprintf("https://%s/share?url=%s&text=%s", serverURI, trackData.TrackURL, trackData.TrackEnc)
 	} else if platform == "Twitter" {
 		shareURLData = fmt.Sprintf("https://x.com/intent/tweet?url=%s&text=%s", trackData.TrackURL, trackData.TrackEnc)
 	}
