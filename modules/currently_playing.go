@@ -76,7 +76,7 @@ func GetReturnURL(resp *resty.Response, platform string) string {
 	if platform == "Misskey" {
 		shareURLData = fmt.Sprintf("https://mi.soli0222.com/share?url=%s&text=%s", trackData.TrackURL, trackData.TrackEnc)
 	} else if platform == "Twitter" {
-		shareURLData = fmt.Sprintf("https://twitter.com/intent/tweet?url=%s&text=%s", trackData.TrackURL, trackData.TrackEnc)
+		shareURLData = fmt.Sprintf("https://x.com/intent/tweet?url=%s&text=%s", trackData.TrackURL, trackData.TrackEnc)
 	}
 
 	return shareURLData
