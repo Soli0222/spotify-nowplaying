@@ -28,6 +28,9 @@ func main() {
 		return c.Redirect(http.StatusFound, "/note")
 	})
 
+	// statusハンドラー
+	e.GET("/status", handlers.StatusHandler)
+
 	// /noteグループ
 	noteGroup := e.Group("/note")
 	noteGroup.GET("", handlers.NoteLoginHandler)
