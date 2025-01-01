@@ -13,7 +13,21 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Println("Not using .env file")
+	}
+
+	requiredVars := []string{
+		"SERVER_URI",
+		"SPOTIFY_CLIENT_ID",
+		"SPOTIFY_CLIENT_SECRET",
+		"SPOTIFY_REDIRECT_URI_NOTE",
+		"SPOTIFY_REDIRECT_URI_TWEET",
+	}
+
+	for _, v := range requiredVars {
+		if os.Getenv(v) == "" {
+			log.Fatalf("Environment variable %s is not set", v)
+		}
 	}
 
 	port := os.Getenv("PORT")
