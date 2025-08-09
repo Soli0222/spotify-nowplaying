@@ -4,7 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"spotify-nowplaying/handlers"
+
+	"github.com/Soli0222/spotify-nowplaying/handlers"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"

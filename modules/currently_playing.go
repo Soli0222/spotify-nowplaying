@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -76,7 +76,10 @@ func GetReturnURL(resp *resty.Response, platform string) string {
 
 	if platform == "Misskey" {
 		serverURI := os.Getenv("SERVER_URI")
-		shareURLData = fmt.Sprintf("https://%s/share?url=%s&text=%s", serverURI, trackData.TrackURL, trackData.TrackEnc)
+		if !strings.HasPrefix(serverURI, "http://") && !strings.HasPrefix(serverURI, "https://") {
+			serverURI = "https://" + serverURI
+		}
+		shareURLData = fmt.Sprintf("%s/share?url=%s&text=%s", serverURI, trackData.TrackURL, trackData.TrackEnc)
 	} else if platform == "Twitter" {
 		shareURLData = fmt.Sprintf("https://x.com/intent/tweet?url=%s&text=%s", trackData.TrackURL, trackData.TrackEnc)
 	}
