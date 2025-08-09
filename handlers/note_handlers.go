@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"spotify-nowplaying/modules"
+
+	"github.com/Soli0222/spotify-nowplaying/modules"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
