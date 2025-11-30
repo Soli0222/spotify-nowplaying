@@ -5,4 +5,5 @@ services:
       - './.env:/app/.env:ro'
     ports:
       - 8080:8080
+      - 9090:9090
     restart: always
