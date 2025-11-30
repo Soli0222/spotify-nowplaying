@@ -10,15 +10,41 @@ SpotifyのAPIを使用して、現在再生中の曲やエピソードの情報�
 シェアリンクには、以下のようなフォーマットのテキストが含まれており、曲名, アーティスト名, #NowPlayingを自ら入力する必要はありません。
 
 ```
-放課後マーメイド / しぐれうい
+あとがき / 来栖夏芽
 #NowPlaying #PsrPlaying
-https://open.spotify.com/track/4EwRjHviKXIlmEUfIItkqP
+https://open.spotify.com/track/5WehEFiES0ebVqgXpYQ8Fi
 ```
 
 ## デモ
 
 Spotifyで音楽を再生した状態で、[ここ](https://spn.soli0222.com/tweet)にアクセスしてみてください。  
 曲名、アーティスト名が入った状態で、簡単に共有することができます。
+
+## プロジェクト構成
+
+```
+spotify-nowplaying/
+├── cmd/
+│   └── server/
+│       └── main.go          # アプリケーションエントリーポイント
+├── internal/
+│   ├── handler/             # HTTPハンドラー
+│   │   ├── handler.go       # 共通ハンドラーロジック
+│   │   ├── note.go          # Misskey関連
+│   │   ├── tweet.go         # Twitter関連
+│   │   └── status.go        # ステータスエンドポイント
+│   ├── metrics/             # Prometheusメトリクス
+│   │   ├── metrics.go
+│   │   └── middleware.go
+│   └── spotify/             # Spotify API関連
+│       ├── auth.go          # OAuth認証（型定義）
+│       ├── client.go        # APIクライアント
+│       └── player.go        # 再生情報取得・シェアURL生成
+├── docker-compose.yml
+├── Dockerfile
+├── go.mod
+└── README.md
+```
 
 ## セットアップ
 
@@ -43,12 +69,13 @@ Spotifyで音楽を再生した状態で、[ここ](https://spn.soli0222.com/twe
    ```
 
    ```.env
-   PORT=8080 //起動するポート番号
-   SERVER_URI=example.tld //リダイレクト先サーバーのドメイン
-   SPOTIFY_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx //クライアントID
-   SPOTIFY_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx //クライアントシークレット
-   SPOTIFY_REDIRECT_URI_NOTE=https://example.tld/note/callback //noteのリダイレクトURL
-   SPOTIFY_REDIRECT_URI_TWEET=https://example.tld/tweet/callback //tweetのリダイレクトURL
+   PORT=8080                    # 起動するポート番号
+   METRICS_PORT=9090            # メトリクスポート番号（デフォルト: 9090）
+   SERVER_URI=example.tld       # リダイレクト先サーバーのドメイン
+   SPOTIFY_CLIENT_ID=xxxxxxxx   # クライアントID
+   SPOTIFY_CLIENT_SECRET=xxxxx  # クライアントシークレット
+   SPOTIFY_REDIRECT_URI_NOTE=https://example.tld/note/callback   # noteのリダイレクトURL
+   SPOTIFY_REDIRECT_URI_TWEET=https://example.tld/tweet/callback # tweetのリダイレクトURL
    ```
 
 ## 実行
@@ -56,7 +83,7 @@ Spotifyで音楽を再生した状態で、[ここ](https://spn.soli0222.com/twe
 開発環境でアプリケーションを実行するには、以下のコマンドを使用します。
 
 ```bash
-go run main.go
+go run ./cmd/server
 ```
 
 Dockerを用いてアプリケーションを実行するには、以下のコマンドを使用します。
@@ -70,22 +97,32 @@ docker compose up -d
 アプリケーションを本番環境用にビルドし、実行するには、以下のコマンドを使用します。
 
 ```bash
-go build
+go build -o server ./cmd/server
 
-./spotify-nowplaying
+./server
 ```
 
-コンテナイメージを自らビルドするには、``docker-compose.yml``に対して、以下の変更を行います。
+マルチアーキテクチャでコンテナイメージをビルドするには、以下のコマンドを使用します。
 
-```docker-compose.yml
-version: '3'
-services:
-  app:
-    build: . //ここを変更
-    platform: linux/amd64
-    volumes:
-      - './.env:/app/.env:ro'
-    ports:
-      - 8080:8080
-    restart: always
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t your-registry/spotify-nowplaying:latest --push .
 ```
+
+## メトリクス
+
+Prometheusメトリクスは別ポート（デフォルト: 9090）の `/metrics` エンドポイントで公開されます。
+
+### 利用可能なメトリクス
+
+| メトリクス名 | タイプ | ラベル | 説明 |
+|---|---|---|---|
+| `http_requests_total` | Counter | method, path, status | HTTPリクエスト総数 |
+| `http_request_duration_seconds` | Histogram | method, path | HTTPリクエスト処理時間 |
+| `spotify_api_requests_total` | Counter | endpoint, status | Spotify APIリクエスト総数 |
+| `spotify_api_request_duration_seconds` | Histogram | endpoint | Spotify API応答時間 |
+| `share_redirects_total` | Counter | platform, content_type | シェアリダイレクト数 |
+| `oauth_callbacks_total` | Counter | platform, status | OAuthコールバック数 |
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。詳細はLICENSEファイルをご覧ください。
