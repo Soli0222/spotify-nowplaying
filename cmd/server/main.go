@@ -61,7 +61,36 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(middleware.Logger())
+	// カスタムロガーミドルウェア（ステータスコードに応じてログレベルを変更）
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus:   true,
+		LogURI:      true,
+		LogMethod:   true,
+		LogLatency:  true,
+		LogRemoteIP: true,
+		LogHost:     true,
+		LogError:    true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			level := "INFO"
+			if v.Status >= 500 {
+				level = "ERROR"
+			} else if v.Status >= 400 {
+				level = "WARN"
+			}
+
+			log.Printf(`{"time":"%s","level":"%s","remote_ip":"%s","host":"%s","method":"%s","uri":"%s","status":%d,"latency":"%s"}`,
+				v.StartTime.Format(time.RFC3339Nano),
+				level,
+				v.RemoteIP,
+				v.Host,
+				v.Method,
+				v.URI,
+				v.Status,
+				v.Latency.String(),
+			)
+			return nil
+		},
+	}))
 	e.Use(middleware.Recover())
 	e.Use(metrics.PrometheusMiddleware())
 
