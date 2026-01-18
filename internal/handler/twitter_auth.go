@@ -155,7 +155,7 @@ func (h *TwitterAuthHandler) CallbackTwitterAuth(c echo.Context) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/dashboard?error=exchange_failed")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -186,10 +186,8 @@ func (h *TwitterAuthHandler) CallbackTwitterAuth(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/dashboard?error=save_failed")
 	}
 
-	// Delete the session
-	if err := h.store.DeleteTwitterPKCESession(ctx, state); err != nil {
-		// Log but don't fail
-	}
+	// Delete the session (ignore error - session cleanup is best effort)
+	_ = h.store.DeleteTwitterPKCESession(ctx, state)
 
 	return c.Redirect(http.StatusFound, "/dashboard?success=twitter_connected")
 }
@@ -216,7 +214,7 @@ func (h *TwitterAuthHandler) RefreshTwitterToken(ctx echo.Context, userID string
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -278,7 +276,7 @@ func (h *TwitterAuthHandler) getTwitterUserInfo(accessToken string) (*TwitterUse
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

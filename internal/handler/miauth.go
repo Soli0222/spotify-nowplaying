@@ -139,7 +139,7 @@ func (h *MiAuthHandler) CallbackMiAuth(c echo.Context) error {
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/dashboard?error=check_failed")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -179,10 +179,8 @@ func (h *MiAuthHandler) CallbackMiAuth(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/dashboard?error=save_failed")
 	}
 
-	// Delete the session
-	if err := h.store.DeleteMiAuthSession(ctx, sessionID); err != nil {
-		// Log but don't fail
-	}
+	// Delete the session (ignore error - session cleanup is best effort)
+	_ = h.store.DeleteMiAuthSession(ctx, sessionID)
 
 	return c.Redirect(http.StatusFound, "/dashboard?success=misskey_connected")
 }
@@ -230,7 +228,7 @@ func (h *MiAuthHandler) getMisskeyUserInfo(instanceURL, accessToken string) (*Mi
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
