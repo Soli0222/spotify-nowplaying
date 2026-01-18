@@ -93,7 +93,7 @@ func TestGetShareInfo_NilResponse(t *testing.T) {
 }
 
 func TestGetShareInfo_ServerURIWithoutScheme(t *testing.T) {
-	t.Setenv("SERVER_URI", "misskey.io")
+	t.Setenv("SERVER_URI", "misskey.tld")
 
 	playerResp := &PlayerResponse{
 		CurrentlyPlayingType: "track",
@@ -108,7 +108,7 @@ func TestGetShareInfo_ServerURIWithoutScheme(t *testing.T) {
 
 	shareURL, _ := GetShareInfo(playerResp, "Misskey")
 
-	assert.Contains(t, shareURL, "https://misskey.io/share")
+	assert.Contains(t, shareURL, "https://misskey.tld/share")
 }
 
 func TestGetShareInfo_ServerURIWithHTTP(t *testing.T) {
@@ -172,7 +172,7 @@ func TestParsePlayerResponse_Episode(t *testing.T) {
 }
 
 func TestBuildShareURL_Misskey(t *testing.T) {
-	t.Setenv("SERVER_URI", "misskey.io")
+	t.Setenv("SERVER_URI", "misskey.tld")
 
 	trackData := TrackData{
 		TrackName:  "Song",
@@ -183,7 +183,7 @@ func TestBuildShareURL_Misskey(t *testing.T) {
 
 	shareURL := BuildShareURL(trackData, "Misskey")
 
-	assert.Contains(t, shareURL, "https://misskey.io/share")
+	assert.Contains(t, shareURL, "https://misskey.tld/share")
 	assert.Contains(t, shareURL, "url=https://open.spotify.com/track/abc")
 }
 

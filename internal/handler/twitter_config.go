@@ -63,7 +63,7 @@ type TwitterEligibility struct {
 
 // CheckEligibility checks if a user is eligible for Twitter integration
 // misskeyConnected: whether the user has Misskey connected
-// misskeyHost: the user's Misskey instance host (e.g., "misskey.io")
+// misskeyHost: the user's Misskey instance host (e.g., "misskey.tld")
 func (c TwitterConfig) CheckEligibility(misskeyConnected bool, misskeyHost string) TwitterEligibility {
 	if !c.Enabled {
 		return TwitterEligibility{Eligible: false, Reason: "Twitter integration is disabled"}

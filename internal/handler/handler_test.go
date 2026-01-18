@@ -223,7 +223,7 @@ func TestTweetHomeHandler_NoCookie(t *testing.T) {
 }
 
 func TestNoteHomeHandler_Success(t *testing.T) {
-	t.Setenv("SERVER_URI", "misskey.io")
+	t.Setenv("SERVER_URI", "misskey.tld")
 
 	mockClient := &MockSpotifyClient{
 		GetPlayerDataFunc: func(accessToken string) (*spotify.PlayerResponse, time.Duration, error) {
@@ -253,7 +253,7 @@ func TestNoteHomeHandler_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusFound, rec.Code)
 	location := rec.Header().Get("Location")
-	assert.Contains(t, location, "misskey.io/share")
+	assert.Contains(t, location, "misskey.tld/share")
 }
 
 func TestTweetHomeHandler_Success(t *testing.T) {

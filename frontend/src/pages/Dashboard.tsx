@@ -284,7 +284,7 @@ function Dashboard() {
                 <div className="input-group">
                   <input
                     type="text"
-                    placeholder="misskey.io"
+                    placeholder="misskey.tld"
                     value={misskeyInstance}
                     onChange={(e) => setMisskeyInstance(e.target.value)}
                   />

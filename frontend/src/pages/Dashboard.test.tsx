@@ -98,7 +98,7 @@ describe('Dashboard - Misskey Integration', () => {
     render(<Dashboard />)
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('misskey.io')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('misskey.tld')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'misskey.connect' })).toBeInTheDocument()
     })
   })
@@ -108,9 +108,9 @@ describe('Dashboard - Misskey Integration', () => {
       ...mockUserInfo,
       misskey_connected: true,
       misskey_username: 'testuser',
-      misskey_instance_url: 'https://misskey.io',
-      misskey_avatar_url: 'https://misskey.io/avatar.jpg',
-      misskey_host: 'misskey.io',
+      misskey_instance_url: 'https://misskey.tld',
+      misskey_avatar_url: 'https://misskey.tld/avatar.jpg',
+      misskey_host: 'misskey.tld',
     })
 
     render(<Dashboard />)

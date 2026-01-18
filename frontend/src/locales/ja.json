@@ -16,7 +16,7 @@
     "disconnected": "未接続",
     "instance": "インスタンス:",
     "notConnected": "未接続",
-    "placeholder": "misskey.io",
+    "placeholder": "misskey.tld",
     "connect": "接続",
     "connecting": "接続中...",
     "disconnect": "切断",

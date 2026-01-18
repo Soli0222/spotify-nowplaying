@@ -82,7 +82,7 @@ describe('getUserInfo', () => {
 describe('startMiAuth', () => {
   it('returns auth URL when successful', async () => {
     const mockResponse = {
-      auth_url: 'https://misskey.io/miauth/xxx',
+      auth_url: 'https://misskey.tld/miauth/xxx',
     }
 
     mockFetch.mockResolvedValueOnce({
@@ -90,14 +90,14 @@ describe('startMiAuth', () => {
       json: () => Promise.resolve(mockResponse),
     })
 
-    const result = await startMiAuth('misskey.io')
+    const result = await startMiAuth('misskey.tld')
 
     expect(mockFetch).toHaveBeenCalledWith('/api/miauth/start', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ instance_url: 'misskey.io' }),
+      body: JSON.stringify({ instance_url: 'misskey.tld' }),
     })
     expect(result).toEqual(mockResponse)
   })
