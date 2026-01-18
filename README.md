@@ -131,10 +131,22 @@ DATABASE_URL=postgres://user:password@localhost:5432/spotify_nowplaying?sslmode=
 # JWT（API直接投稿機能を使用する場合）
 JWT_SECRET=your-secret-key       # JWT署名用シークレット
 
+# トークン暗号化（推奨）
+TOKEN_ENCRYPTION_KEY=xxxxxxxx    # 32バイトの暗号化キー（AES-256）
+
 # Twitter API（Twitter連携を使用する場合）
 TWITTER_CLIENT_ID=xxxxxxxx       # Twitter クライアントID
 TWITTER_CLIENT_SECRET=xxxxx      # Twitter クライアントシークレット
 ```
+
+> **暗号化キーの生成方法:**
+> ```bash
+> # OpenSSLを使用
+> openssl rand -base64 32 | head -c 32
+> 
+> # または、Goで生成
+> go run -e 'package main; import ("crypto/rand"; "fmt"; "io"); func main() { b := make([]byte, 32); io.ReadFull(rand.Reader, b); fmt.Printf("%s", b) }'
+> ```
 
 ### 3. OAuth設定
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Soli0222/spotify-nowplaying/internal/crypto"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
@@ -80,10 +81,70 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
+// decryptUserTokens decrypts all encrypted tokens in a User struct
+func decryptUserTokens(user *User) error {
+	if user == nil {
+		return nil
+	}
+
+	// Decrypt Spotify tokens
+	if user.SpotifyAccessToken.Valid {
+		decrypted, err := crypto.DecryptToken(user.SpotifyAccessToken.String)
+		if err != nil {
+			return fmt.Errorf("failed to decrypt spotify access token: %w", err)
+		}
+		user.SpotifyAccessToken.String = decrypted
+	}
+	if user.SpotifyRefreshToken.Valid {
+		decrypted, err := crypto.DecryptToken(user.SpotifyRefreshToken.String)
+		if err != nil {
+			return fmt.Errorf("failed to decrypt spotify refresh token: %w", err)
+		}
+		user.SpotifyRefreshToken.String = decrypted
+	}
+
+	// Decrypt Misskey token
+	if user.MisskeyAccessToken.Valid {
+		decrypted, err := crypto.DecryptToken(user.MisskeyAccessToken.String)
+		if err != nil {
+			return fmt.Errorf("failed to decrypt misskey access token: %w", err)
+		}
+		user.MisskeyAccessToken.String = decrypted
+	}
+
+	// Decrypt Twitter tokens
+	if user.TwitterAccessToken.Valid {
+		decrypted, err := crypto.DecryptToken(user.TwitterAccessToken.String)
+		if err != nil {
+			return fmt.Errorf("failed to decrypt twitter access token: %w", err)
+		}
+		user.TwitterAccessToken.String = decrypted
+	}
+	if user.TwitterRefreshToken.Valid {
+		decrypted, err := crypto.DecryptToken(user.TwitterRefreshToken.String)
+		if err != nil {
+			return fmt.Errorf("failed to decrypt twitter refresh token: %w", err)
+		}
+		user.TwitterRefreshToken.String = decrypted
+	}
+
+	return nil
+}
+
 // CreateUser creates a new user
 func (s *Store) CreateUser(ctx context.Context, spotifyUserID, accessToken, refreshToken string, expiresAt time.Time) (*User, error) {
+	// Encrypt tokens before storing
+	encAccessToken, err := crypto.EncryptToken(accessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt access token: %w", err)
+	}
+	encRefreshToken, err := crypto.EncryptToken(refreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt refresh token: %w", err)
+	}
+
 	user := &User{}
-	err := s.db.QueryRowContext(ctx, `
+	err = s.db.QueryRowContext(ctx, `
 		INSERT INTO users (spotify_user_id, spotify_access_token, spotify_refresh_token, spotify_token_expires_at)
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (spotify_user_id) DO UPDATE SET
@@ -95,7 +156,7 @@ func (s *Store) CreateUser(ctx context.Context, spotifyUserID, accessToken, refr
 			misskey_instance_url, misskey_access_token, twitter_access_token, twitter_refresh_token,
 			twitter_token_expires_at, api_url_token, api_header_token_hash, api_header_token_enabled,
 			created_at, updated_at
-	`, spotifyUserID, accessToken, refreshToken, expiresAt).Scan(
+	`, spotifyUserID, encAccessToken, encRefreshToken, expiresAt).Scan(
 		&user.ID, &user.SpotifyUserID, &user.SpotifyAccessToken, &user.SpotifyRefreshToken,
 		&user.SpotifyTokenExpiresAt, &user.MisskeyInstanceURL, &user.MisskeyAccessToken,
 		&user.TwitterAccessToken, &user.TwitterRefreshToken, &user.TwitterTokenExpiresAt,
@@ -105,6 +166,12 @@ func (s *Store) CreateUser(ctx context.Context, spotifyUserID, accessToken, refr
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
+
+	// Decrypt tokens for the returned user
+	if err := decryptUserTokens(user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
@@ -134,6 +201,11 @@ func (s *Store) GetUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
+
+	if err := decryptUserTokens(user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
@@ -163,6 +235,11 @@ func (s *Store) GetUserBySpotifyID(ctx context.Context, spotifyUserID string) (*
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
+
+	if err := decryptUserTokens(user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
@@ -192,12 +269,22 @@ func (s *Store) GetUserByAPIToken(ctx context.Context, apiToken uuid.UUID) (*Use
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
+
+	if err := decryptUserTokens(user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
 // UpdateMisskeyToken updates the Misskey token and user information for a user
 func (s *Store) UpdateMisskeyToken(ctx context.Context, userID uuid.UUID, instanceURL, accessToken, misskeyUserID, username, avatarURL, host string) error {
-	_, err := s.db.ExecContext(ctx, `
+	encAccessToken, err := crypto.EncryptToken(accessToken)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt misskey token: %w", err)
+	}
+
+	_, err = s.db.ExecContext(ctx, `
 		UPDATE users SET
 			misskey_instance_url = $2,
 			misskey_access_token = $3,
@@ -207,7 +294,7 @@ func (s *Store) UpdateMisskeyToken(ctx context.Context, userID uuid.UUID, instan
 			misskey_host = $7,
 			updated_at = NOW()
 		WHERE id = $1
-	`, userID, instanceURL, accessToken, misskeyUserID, username, avatarURL, host)
+	`, userID, instanceURL, encAccessToken, misskeyUserID, username, avatarURL, host)
 	if err != nil {
 		return fmt.Errorf("failed to update misskey token: %w", err)
 	}
@@ -216,7 +303,16 @@ func (s *Store) UpdateMisskeyToken(ctx context.Context, userID uuid.UUID, instan
 
 // UpdateTwitterToken updates the Twitter token and user information for a user
 func (s *Store) UpdateTwitterToken(ctx context.Context, userID uuid.UUID, accessToken, refreshToken string, expiresAt time.Time, twitterUserID, username, avatarURL string) error {
-	_, err := s.db.ExecContext(ctx, `
+	encAccessToken, err := crypto.EncryptToken(accessToken)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt twitter access token: %w", err)
+	}
+	encRefreshToken, err := crypto.EncryptToken(refreshToken)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt twitter refresh token: %w", err)
+	}
+
+	_, err = s.db.ExecContext(ctx, `
 		UPDATE users SET
 			twitter_access_token = $2,
 			twitter_refresh_token = $3,
@@ -226,7 +322,7 @@ func (s *Store) UpdateTwitterToken(ctx context.Context, userID uuid.UUID, access
 			twitter_avatar_url = $7,
 			updated_at = NOW()
 		WHERE id = $1
-	`, userID, accessToken, refreshToken, expiresAt, twitterUserID, username, avatarURL)
+	`, userID, encAccessToken, encRefreshToken, expiresAt, twitterUserID, username, avatarURL)
 	if err != nil {
 		return fmt.Errorf("failed to update twitter token: %w", err)
 	}
@@ -235,14 +331,23 @@ func (s *Store) UpdateTwitterToken(ctx context.Context, userID uuid.UUID, access
 
 // UpdateSpotifyToken updates the Spotify token for a user
 func (s *Store) UpdateSpotifyToken(ctx context.Context, userID uuid.UUID, accessToken, refreshToken string, expiresAt time.Time) error {
-	_, err := s.db.ExecContext(ctx, `
+	encAccessToken, err := crypto.EncryptToken(accessToken)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt spotify access token: %w", err)
+	}
+	encRefreshToken, err := crypto.EncryptToken(refreshToken)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt spotify refresh token: %w", err)
+	}
+
+	_, err = s.db.ExecContext(ctx, `
 		UPDATE users SET
 			spotify_access_token = $2,
 			spotify_refresh_token = $3,
 			spotify_token_expires_at = $4,
 			updated_at = NOW()
 		WHERE id = $1
-	`, userID, accessToken, refreshToken, expiresAt)
+	`, userID, encAccessToken, encRefreshToken, expiresAt)
 	if err != nil {
 		return fmt.Errorf("failed to update spotify token: %w", err)
 	}
