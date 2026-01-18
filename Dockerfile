@@ -1,7 +1,7 @@
 # Frontend build stage
 FROM node:25.3.0-alpine3.23 AS frontend-build
 WORKDIR /app/frontend
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
