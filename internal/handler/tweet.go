@@ -9,7 +9,7 @@ func (h *Handler) TweetHomeHandler(c echo.Context) error {
 
 // TweetLoginHandler はTwitter向けのログインハンドラー
 func TweetLoginHandler(c echo.Context) error {
-	return loginHandler(c, "SPOTIFY_REDIRECT_URI_TWEET")
+	return loginHandler(c, "/tweet/callback")
 }
 
 // TweetCallbackHandler はTwitter向けのコールバックハンドラー

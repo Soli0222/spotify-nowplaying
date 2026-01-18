@@ -1,0 +1,85 @@
+{
+  "app": {
+    "title": "Spotify NowPlaying",
+    "logout": "Logout",
+    "description": "Share your currently playing music to Misskey and Twitter",
+    "loginWithSpotify": "Login with Spotify"
+  },
+  "spotify": {
+    "title": "Spotify",
+    "connectedAs": "Connected as:",
+    "connected": "Connected"
+  },
+  "misskey": {
+    "title": "Misskey",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "instance": "Instance:",
+    "notConnected": "Not connected",
+    "placeholder": "misskey.io",
+    "connect": "Connect",
+    "connecting": "Connecting...",
+    "disconnect": "Disconnect",
+    "notAvailable": "Misskey integration is not available",
+    "unknown": "Unknown"
+  },
+  "twitter": {
+    "title": "Twitter",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connectedAs": "Connected as",
+    "notConnected": "Not connected",
+    "connect": "Connect Twitter",
+    "disconnect": "Disconnect",
+    "notAvailable": "Twitter integration is not available",
+    "connectionNotAvailable": "Twitter connection not available"
+  },
+  "api": {
+    "title": "API Settings",
+    "urlToken": {
+      "title": "API Posting URL",
+      "description": "Call this URL to post your currently playing track to connected platforms.",
+      "copy": "Copy",
+      "regenerate": "Regenerate URL",
+      "optional": "Optional: Add ?target=misskey or ?target=twitter to post to specific platform only."
+    },
+    "headerToken": {
+      "title": "Header Token (Optional)",
+      "description": "Enable header token for additional security. When enabled, requests must include Authorization: Bearer token header.",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "status": "Status",
+      "generate": "Generate Token",
+      "regenerate": "Regenerate Token",
+      "disable": "Disable",
+      "copyToken": "Copy Token",
+      "warning": "Save this token now - it will not be shown again!"
+    },
+    "examples": {
+      "title": "Usage Examples",
+      "description": "Examples of how to call the API:",
+      "basicTitle": "Basic (no header token)",
+      "withHeaderTitle": "With header token",
+      "misskeyOnlyTitle": "Post to Misskey only",
+      "twitterOnlyTitle": "Post to Twitter only"
+    }
+  },
+  "messages": {
+    "copiedToClipboard": "Copied to clipboard!",
+    "misskeyConnected": "Misskey connected successfully!",
+    "twitterConnected": "Twitter connected successfully!",
+    "misskeyDisconnected": "Misskey disconnected",
+    "twitterDisconnected": "Twitter disconnected",
+    "headerTokenDisabled": "Header token disabled",
+    "apiUrlTokenRegenerated": "API URL token regenerated",
+    "enterMisskeyInstance": "Please enter a Misskey instance URL",
+    "operationSuccess": "Operation completed successfully!",
+    "error": "Error",
+    "errorLoadingUserInfo": "Error loading user info"
+  },
+  "language": {
+    "label": "Language",
+    "ja": "日本語",
+    "en": "English"
+  }
+}

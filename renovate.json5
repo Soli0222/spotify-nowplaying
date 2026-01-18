@@ -5,6 +5,7 @@
     ":dependencyDashboard"
   ],
   timezone: 'Asia/Tokyo',
+  rangeStrategy: 'bump',
   prConcurrentLimit: 20,
   prHourlyLimit: 10,
   "reviewers": [
@@ -34,6 +35,52 @@
       ],
       commitMessageTopic: 'Go {{depName}}',
       automerge: false,
+    },
+    {
+      matchManagers: [
+        'npm',
+      ],
+      commitMessageTopic: 'npm {{depName}}',
+      automerge: false,
+      groupName: 'frontend dependencies',
+      matchFileNames: ['frontend/**'],
+    },
+    {
+      matchManagers: [
+        'npm',
+      ],
+      matchDepTypes: ['devDependencies'],
+      matchFileNames: ['frontend/**'],
+      commitMessageTopic: 'npm dev {{depName}}',
+      automerge: true,
+      groupName: 'frontend dev dependencies',
+    },
+    {
+      matchManagers: [
+        'npm',
+      ],
+      matchPackagePatterns: ['^@types/'],
+      matchFileNames: ['frontend/**'],
+      automerge: true,
+      groupName: 'frontend type definitions',
+    },
+    {
+      matchManagers: [
+        'npm',
+      ],
+      matchPackagePatterns: ['^vitest', '^@vitest/', '^@testing-library/'],
+      matchFileNames: ['frontend/**'],
+      automerge: true,
+      groupName: 'frontend testing',
+    },
+    {
+      matchManagers: [
+        'npm',
+      ],
+      matchPackagePatterns: ['^eslint', '^typescript-eslint'],
+      matchFileNames: ['frontend/**'],
+      automerge: true,
+      groupName: 'frontend linting',
     },
     {
       matchManagers: [

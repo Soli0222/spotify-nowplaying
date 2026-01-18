@@ -55,7 +55,7 @@ func TestStatusHandler(t *testing.T) {
 
 func TestNoteLoginHandler(t *testing.T) {
 	t.Setenv("SPOTIFY_CLIENT_ID", "test-client-id")
-	t.Setenv("SPOTIFY_REDIRECT_URI_NOTE", "http://localhost/note/callback")
+	t.Setenv("BASE_URL", "http://localhost")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/note", nil)
@@ -76,7 +76,7 @@ func TestNoteLoginHandler(t *testing.T) {
 
 func TestTweetLoginHandler(t *testing.T) {
 	t.Setenv("SPOTIFY_CLIENT_ID", "test-client-id")
-	t.Setenv("SPOTIFY_REDIRECT_URI_TWEET", "http://localhost/tweet/callback")
+	t.Setenv("BASE_URL", "http://localhost")
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/tweet", nil)
@@ -127,7 +127,7 @@ func TestTweetCallbackHandler_MissingCode(t *testing.T) {
 }
 
 func TestNoteCallbackHandler_Success(t *testing.T) {
-	t.Setenv("SPOTIFY_REDIRECT_URI_NOTE", "http://localhost/note/callback")
+	t.Setenv("BASE_URL", "http://localhost")
 
 	mockClient := &MockSpotifyClient{
 		ExchangeTokenFunc: func(code, redirectURI string) (*spotify.Tokens, error) {
@@ -165,7 +165,7 @@ func TestNoteCallbackHandler_Success(t *testing.T) {
 }
 
 func TestTweetCallbackHandler_Success(t *testing.T) {
-	t.Setenv("SPOTIFY_REDIRECT_URI_TWEET", "http://localhost/tweet/callback")
+	t.Setenv("BASE_URL", "http://localhost")
 
 	mockClient := &MockSpotifyClient{
 		ExchangeTokenFunc: func(code, redirectURI string) (*spotify.Tokens, error) {
