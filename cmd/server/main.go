@@ -134,6 +134,11 @@ func main() {
 		}()
 		log.Println("Connected to database")
 
+		// Run database migrations
+		if err := db.RunMigrations(); err != nil {
+			log.Fatalf("Failed to run database migrations: %v", err)
+		}
+
 		jwtConfig = auth.DefaultJWTConfig()
 
 		// API handlers
