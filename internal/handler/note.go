@@ -9,7 +9,7 @@ func (h *Handler) NoteHomeHandler(c echo.Context) error {
 
 // NoteLoginHandler はMisskey向けのログインハンドラー
 func NoteLoginHandler(c echo.Context) error {
-	return loginHandler(c, "SPOTIFY_REDIRECT_URI_NOTE")
+	return loginHandler(c, "/note/callback")
 }
 
 // NoteCallbackHandler はMisskey向けのコールバックハンドラー

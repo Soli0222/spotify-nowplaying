@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,9 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Soli0222/spotify-nowplaying/internal/auth"
 	"github.com/Soli0222/spotify-nowplaying/internal/handler"
 	"github.com/Soli0222/spotify-nowplaying/internal/metrics"
 	"github.com/Soli0222/spotify-nowplaying/internal/spotify"
+	"github.com/Soli0222/spotify-nowplaying/internal/store"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -28,8 +31,7 @@ func main() {
 		"SERVER_URI",
 		"SPOTIFY_CLIENT_ID",
 		"SPOTIFY_CLIENT_SECRET",
-		"SPOTIFY_REDIRECT_URI_NOTE",
-		"SPOTIFY_REDIRECT_URI_TWEET",
+		"BASE_URL",
 	}
 
 	for _, v := range requiredVars {
@@ -98,8 +100,104 @@ func main() {
 	spotifyClient := spotify.NewHTTPClient()
 	h := handler.NewHandler(spotifyClient)
 
-	// /は/noteにリダイレクト
+	// Construct DATABASE_URL from POSTGRES_* env vars if not explicitly set
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		user := os.Getenv("POSTGRES_USER")
+		password := os.Getenv("POSTGRES_PASSWORD")
+		host := os.Getenv("POSTGRES_HOST")
+		port := os.Getenv("POSTGRES_PORT")
+		dbname := os.Getenv("POSTGRES_DB")
+
+		if user != "" && host != "" && port != "" && dbname != "" {
+			if password != "" {
+				databaseURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
+			} else {
+				databaseURL = fmt.Sprintf("postgres://%s@%s:%s/%s?sslmode=disable", user, host, port, dbname)
+			}
+		}
+	}
+
+	// Database接続（オプション - databaseURLが設定されている場合のみ）
+	var db *store.Store
+	var jwtConfig auth.JWTConfig
+	if databaseURL != "" {
+		var err error
+		db, err = store.New(databaseURL)
+		if err != nil {
+			log.Fatalf("Failed to connect to database: %v", err)
+		}
+		defer func() {
+			if err := db.Close(); err != nil {
+				log.Printf("Error closing database: %v", err)
+			}
+		}()
+		log.Println("Connected to database")
+
+		jwtConfig = auth.DefaultJWTConfig()
+
+		// API handlers
+		spotifyAuthHandler := handler.NewSpotifyAuthHandler(db, spotifyClient, jwtConfig)
+		miAuthHandler := handler.NewMiAuthHandler(db, jwtConfig)
+		twitterAuthHandler := handler.NewTwitterAuthHandler(db, jwtConfig)
+		settingsHandler := handler.NewSettingsHandler(db, jwtConfig)
+		apiPostHandler := handler.NewAPIPostHandler(db, spotifyClient)
+
+		// API routes
+		api := e.Group("/api")
+
+		// Public auth routes
+		api.GET("/auth/check", spotifyAuthHandler.CheckAuth)
+		api.GET("/auth/spotify", spotifyAuthHandler.LoginSpotify)
+		api.GET("/auth/spotify/callback", spotifyAuthHandler.CallbackSpotify)
+
+		// Public API post route (authenticated by URL token + optional header token)
+		api.GET("/post/:token", apiPostHandler.PostNowPlaying)
+
+		// MiAuth callback (no JWT required, uses session)
+		api.GET("/miauth/callback", miAuthHandler.CallbackMiAuth)
+
+		// Twitter callback (no JWT required, uses session)
+		api.GET("/twitter/callback", twitterAuthHandler.CallbackTwitterAuth)
+
+		// Protected routes (require JWT)
+		protected := api.Group("")
+		protected.Use(auth.JWTMiddleware(jwtConfig))
+
+		// User info
+		protected.GET("/me", settingsHandler.GetUserInfo)
+		protected.POST("/logout", settingsHandler.Logout)
+
+		// App config (requires auth for eligibility check)
+		protected.GET("/config", settingsHandler.GetAppConfig)
+
+		// MiAuth
+		protected.POST("/miauth/start", miAuthHandler.StartMiAuth)
+		protected.DELETE("/miauth", miAuthHandler.DisconnectMisskey)
+
+		// Twitter
+		protected.GET("/twitter/start", twitterAuthHandler.StartTwitterAuth)
+		protected.DELETE("/twitter", twitterAuthHandler.DisconnectTwitter)
+
+		// Settings
+		protected.POST("/settings/header-token", settingsHandler.GenerateHeaderToken)
+		protected.DELETE("/settings/header-token", settingsHandler.DisableHeaderToken)
+		protected.POST("/settings/api-url-token/regenerate", settingsHandler.RegenerateAPIURLToken)
+
+		// Serve SPA static files
+		e.Static("/assets", "frontend/dist/assets")
+		e.File("/vite.svg", "frontend/dist/vite.svg")
+
+		// SPA fallback for frontend routes
+		e.GET("/login", serveSPA)
+		e.GET("/dashboard", serveSPA)
+	}
+
+	// /は/noteにリダイレクト (既存の動作を維持、ただしDBがある場合はフロントエンドへ)
 	e.GET("/", func(c echo.Context) error {
+		if db != nil {
+			return serveSPA(c)
+		}
 		return c.Redirect(http.StatusFound, "/note")
 	})
 
@@ -148,4 +246,9 @@ func main() {
 	}
 
 	log.Println("Servers gracefully stopped")
+}
+
+// serveSPA serves the SPA index.html for frontend routes
+func serveSPA(c echo.Context) error {
+	return c.File("frontend/dist/index.html")
 }

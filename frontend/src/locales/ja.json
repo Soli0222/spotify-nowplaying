@@ -1,0 +1,85 @@
+{
+  "app": {
+    "title": "Spotify NowPlaying",
+    "logout": "ログアウト",
+    "description": "Spotify で再生中の曲を Misskey と Twitter にシェア",
+    "loginWithSpotify": "Spotify でログイン"
+  },
+  "spotify": {
+    "title": "Spotify",
+    "connectedAs": "接続中:",
+    "connected": "接続済み"
+  },
+  "misskey": {
+    "title": "Misskey",
+    "connected": "接続済み",
+    "disconnected": "未接続",
+    "instance": "インスタンス:",
+    "notConnected": "未接続",
+    "placeholder": "misskey.io",
+    "connect": "接続",
+    "connecting": "接続中...",
+    "disconnect": "切断",
+    "notAvailable": "Misskey統合は利用できません",
+    "unknown": "不明"
+  },
+  "twitter": {
+    "title": "Twitter",
+    "connected": "接続済み",
+    "disconnected": "未接続",
+    "connectedAs": "接続中",
+    "notConnected": "未接続",
+    "connect": "Twitter接続",
+    "disconnect": "切断",
+    "notAvailable": "Twitter統合は利用できません",
+    "connectionNotAvailable": "Twitter接続は利用できません"
+  },
+  "api": {
+    "title": "API設定",
+    "urlToken": {
+      "title": "API 投稿 URL",
+      "description": "このURLを呼び出すと、現在再生中のトラックを接続済みプラットフォームに投稿できます。",
+      "copy": "コピー",
+      "regenerate": "URLを再生成",
+      "optional": "オプション: ?target=misskey または ?target=twitter を追加すると、特定のプラットフォームのみに投稿できます。"
+    },
+    "headerToken": {
+      "title": "ヘッダートークン（オプション）",
+      "description": "追加のセキュリティのためにヘッダートークンを有効にします。有効にすると、リクエストに Authorization: Bearer token ヘッダーが必要になります。",
+      "enabled": "有効",
+      "disabled": "無効",
+      "status": "ステータス",
+      "generate": "トークンを生成",
+      "regenerate": "トークンを再生成",
+      "disable": "無効化",
+      "copyToken": "トークンをコピー",
+      "warning": "今すぐこのトークンを保存してください - 再度表示されません！"
+    },
+    "examples": {
+      "title": "使用例",
+      "description": "APIの呼び出し方法の例:",
+      "basicTitle": "基本（ヘッダートークンなし）",
+      "withHeaderTitle": "ヘッダートークンあり",
+      "misskeyOnlyTitle": "Misskeyのみに投稿",
+      "twitterOnlyTitle": "Twitterのみに投稿"
+    }
+  },
+  "messages": {
+    "copiedToClipboard": "クリップボードにコピーしました！",
+    "misskeyConnected": "Misskeyに接続しました！",
+    "twitterConnected": "Twitterに接続しました！",
+    "misskeyDisconnected": "Misskeyを切断しました",
+    "twitterDisconnected": "Twitterを切断しました",
+    "headerTokenDisabled": "ヘッダートークンを無効化しました",
+    "apiUrlTokenRegenerated": "API URLトークンを再生成しました",
+    "enterMisskeyInstance": "MisskeyインスタンスのURLを入力してください",
+    "operationSuccess": "操作が正常に完了しました！",
+    "error": "エラー",
+    "errorLoadingUserInfo": "ユーザー情報の読み込みエラー"
+  },
+  "language": {
+    "label": "言語",
+    "ja": "日本語",
+    "en": "English"
+  }
+}

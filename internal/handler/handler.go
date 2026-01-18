@@ -63,11 +63,12 @@ func (h *Handler) homeHandler(c echo.Context, platform Platform, platformLabel s
 }
 
 // loginHandler は共通のログインハンドラー処理
-func loginHandler(c echo.Context, redirectURIEnvKey string) error {
+func loginHandler(c echo.Context, callbackPath string) error {
 	authURL := "https://accounts.spotify.com/authorize"
 	scope := "user-read-currently-playing user-read-playback-state"
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	redirectURI := os.Getenv(redirectURIEnvKey)
+	baseURL := os.Getenv("BASE_URL")
+	redirectURI := baseURL + callbackPath
 
 	redirectURL := fmt.Sprintf("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
 		authURL, clientID, redirectURI, scope)
@@ -84,12 +85,13 @@ func (h *Handler) callbackHandler(c echo.Context, platform Platform, platformLab
 		return c.String(http.StatusBadRequest, "Code parameter is missing.")
 	}
 
+	baseURL := os.Getenv("BASE_URL")
 	var redirectURI string
 	switch platform {
 	case PlatformMisskey:
-		redirectURI = os.Getenv("SPOTIFY_REDIRECT_URI_NOTE")
+		redirectURI = baseURL + "/note/callback"
 	case PlatformTwitter:
-		redirectURI = os.Getenv("SPOTIFY_REDIRECT_URI_TWEET")
+		redirectURI = baseURL + "/tweet/callback"
 	}
 
 	tokens, err := h.spotifyClient.ExchangeToken(code, redirectURI)
