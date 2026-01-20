@@ -1,15 +1,15 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":dependencyDashboard"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    ':dependencyDashboard',
   ],
   timezone: 'Asia/Tokyo',
   rangeStrategy: 'bump',
   prConcurrentLimit: 20,
   prHourlyLimit: 10,
-  "reviewers": [
-    "Soli0222"
+  reviewers: [
+    'Soli0222',
   ],
   semanticCommits: 'enabled',
   prCreation: 'immediate',
@@ -43,14 +43,20 @@
       commitMessageTopic: 'npm {{depName}}',
       automerge: false,
       groupName: 'frontend dependencies',
-      matchFileNames: ['frontend/**'],
+      matchFileNames: [
+        'frontend/**',
+      ],
     },
     {
       matchManagers: [
         'npm',
       ],
-      matchDepTypes: ['devDependencies'],
-      matchFileNames: ['frontend/**'],
+      matchDepTypes: [
+        'devDependencies',
+      ],
+      matchFileNames: [
+        'frontend/**',
+      ],
       commitMessageTopic: 'npm dev {{depName}}',
       automerge: true,
       groupName: 'frontend dev dependencies',
@@ -59,28 +65,43 @@
       matchManagers: [
         'npm',
       ],
-      matchPackagePatterns: ['^@types/'],
-      matchFileNames: ['frontend/**'],
+      matchFileNames: [
+        'frontend/**',
+      ],
       automerge: true,
       groupName: 'frontend type definitions',
+      matchPackageNames: [
+        '/^@types//',
+      ],
     },
     {
       matchManagers: [
         'npm',
       ],
-      matchPackagePatterns: ['^vitest', '^@vitest/', '^@testing-library/'],
-      matchFileNames: ['frontend/**'],
+      matchFileNames: [
+        'frontend/**',
+      ],
       automerge: true,
       groupName: 'frontend testing',
+      matchPackageNames: [
+        '/^vitest/',
+        '/^@vitest//',
+        '/^@testing-library//',
+      ],
     },
     {
       matchManagers: [
         'npm',
       ],
-      matchPackagePatterns: ['^eslint', '^typescript-eslint'],
-      matchFileNames: ['frontend/**'],
+      matchFileNames: [
+        'frontend/**',
+      ],
       automerge: true,
       groupName: 'frontend linting',
+      matchPackageNames: [
+        '/^eslint/',
+        '/^typescript-eslint/',
+      ],
     },
     {
       matchManagers: [
