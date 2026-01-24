@@ -121,16 +121,39 @@ func (h *APIPostHandler) PostNowPlaying(c echo.Context) error {
 	}
 
 	// Get currently playing from Spotify
-	playerResp, _, err := h.spotifyClient.GetPlayerData(user.SpotifyAccessToken.String)
+	accessToken := user.SpotifyAccessToken.String
+	playerResp, _, err := h.spotifyClient.GetPlayerData(accessToken)
 	if err != nil {
 		if apiErr, ok := spotify.IsAPIError(err); ok {
 			if apiErr.StatusCode == 401 {
-				// TODO: Implement token refresh
-				return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "spotify token expired"})
+				// Token expired, try to refresh
+				if !user.SpotifyRefreshToken.Valid || user.SpotifyRefreshToken.String == "" {
+					return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "spotify token expired and no refresh token available"})
+				}
+
+				newTokens, refreshErr := h.spotifyClient.RefreshToken(user.SpotifyRefreshToken.String)
+				if refreshErr != nil {
+					return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "failed to refresh spotify token"})
+				}
+
+				// Update tokens in database
+				expiresAt := time.Now().Add(time.Duration(newTokens.ExpiresIn) * time.Second)
+				if updateErr := h.store.UpdateSpotifyToken(ctx, user.ID, newTokens.AccessToken, newTokens.RefreshToken, expiresAt); updateErr != nil {
+					return c.JSON(http.StatusInternalServerError, PostResponse{Success: false, Message: "failed to update spotify token"})
+				}
+
+				// Retry with new access token
+				accessToken = newTokens.AccessToken
+				playerResp, _, err = h.spotifyClient.GetPlayerData(accessToken)
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, PostResponse{Success: false, Message: "failed to get player data after token refresh"})
+				}
+			} else {
+				return c.JSON(http.StatusBadRequest, PostResponse{Success: false, Message: fmt.Sprintf("spotify api error: %d", apiErr.StatusCode)})
 			}
-			return c.JSON(http.StatusBadRequest, PostResponse{Success: false, Message: fmt.Sprintf("spotify api error: %d", apiErr.StatusCode)})
+		} else {
+			return c.JSON(http.StatusInternalServerError, PostResponse{Success: false, Message: "failed to get player data"})
 		}
-		return c.JSON(http.StatusInternalServerError, PostResponse{Success: false, Message: "failed to get player data"})
 	}
 
 	// Parse player response to get track data
