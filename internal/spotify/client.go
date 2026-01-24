@@ -19,6 +19,8 @@ type Client interface {
 	GetPlayerData(accessToken string) (*PlayerResponse, time.Duration, error)
 	// ExchangeToken は認証コードをアクセストークンに交換する
 	ExchangeToken(code, redirectURI string) (*Tokens, error)
+	// RefreshToken はリフレッシュトークンを使用して新しいアクセストークンを取得する
+	RefreshToken(refreshToken string) (*Tokens, error)
 }
 
 // PlayerResponse はSpotify Player APIのレスポンス
@@ -160,6 +162,52 @@ func (c *HTTPClient) ExchangeToken(code, redirectURI string) (*Tokens, error) {
 	var tokens Tokens
 	if err := json.Unmarshal(body, &tokens); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	return &tokens, nil
+}
+
+// RefreshToken はリフレッシュトークンを使用して新しいアクセストークンを取得する
+func (c *HTTPClient) RefreshToken(refreshToken string) (*Tokens, error) {
+	form := url.Values{}
+	form.Set("grant_type", "refresh_token")
+	form.Set("refresh_token", refreshToken)
+
+	req, err := http.NewRequest("POST", c.tokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	auth := base64.StdEncoding.EncodeToString([]byte(c.clientID + ":" + c.clientSecret))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Basic "+auth)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		c.logger.Error("token refresh failed", "status", resp.StatusCode, "body", string(body))
+		return nil, &APIError{StatusCode: resp.StatusCode, Message: string(body)}
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var tokens Tokens
+	if err := json.Unmarshal(body, &tokens); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	// Spotifyのリフレッシュトークンのレスポンスには新しいリフレッシュトークンが含まれない場合がある
+	// その場合は元のリフレッシュトークンを保持する
+	if tokens.RefreshToken == "" {
+		tokens.RefreshToken = refreshToken
 	}
 
 	return &tokens, nil

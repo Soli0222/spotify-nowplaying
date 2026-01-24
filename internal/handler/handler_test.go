@@ -18,6 +18,7 @@ import (
 type MockSpotifyClient struct {
 	GetPlayerDataFunc func(accessToken string) (*spotify.PlayerResponse, time.Duration, error)
 	ExchangeTokenFunc func(code, redirectURI string) (*spotify.Tokens, error)
+	RefreshTokenFunc  func(refreshToken string) (*spotify.Tokens, error)
 }
 
 func (m *MockSpotifyClient) GetPlayerData(accessToken string) (*spotify.PlayerResponse, time.Duration, error) {
@@ -30,6 +31,13 @@ func (m *MockSpotifyClient) GetPlayerData(accessToken string) (*spotify.PlayerRe
 func (m *MockSpotifyClient) ExchangeToken(code, redirectURI string) (*spotify.Tokens, error) {
 	if m.ExchangeTokenFunc != nil {
 		return m.ExchangeTokenFunc(code, redirectURI)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *MockSpotifyClient) RefreshToken(refreshToken string) (*spotify.Tokens, error) {
+	if m.RefreshTokenFunc != nil {
+		return m.RefreshTokenFunc(refreshToken)
 	}
 	return nil, errors.New("not implemented")
 }
