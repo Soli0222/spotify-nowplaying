@@ -15,7 +15,7 @@ ADD ./ ./
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o server ./cmd/server
 
 # Final stage
-FROM alpine:3.23.2
+FROM alpine:3.23.3
 COPY --from=build /go/server /app/server
 COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
 WORKDIR /app
