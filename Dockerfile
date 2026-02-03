@@ -1,5 +1,5 @@
 # Frontend build stage
-FROM node:25.5.0-alpine3.23 AS frontend-build
+FROM node:25.6.0-alpine3.23 AS frontend-build
 WORKDIR /app/frontend
 RUN npm install -g pnpm
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
