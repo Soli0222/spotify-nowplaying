@@ -8,7 +8,7 @@ COPY frontend/ ./
 RUN pnpm build
 
 # Backend build stage
-FROM --platform=$BUILDPLATFORM golang:1.25.7-alpine3.22 AS build
+FROM --platform=$BUILDPLATFORM golang:1.26.0-alpine3.22 AS build
 ARG TARGETOS
 ARG TARGETARCH
 ADD ./ ./
