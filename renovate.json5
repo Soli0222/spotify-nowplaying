@@ -21,6 +21,24 @@
       'security',
     ],
   },
+  customManagers: [
+    {
+      customType: 'regex',
+      fileMatch: ['^\\.github/workflows/.*\\.ya?ml$'],
+      matchStrings: [
+        "node-version:\\s*\\[?['\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\"]?\\]?",
+      ],
+      depNameTemplate: 'node',
+      datasourceTemplate: 'docker',
+    },
+    {
+      customType: 'regex',
+      fileMatch: ['go\\.mod$'],
+      matchStrings: ['go (?<currentValue>\\d+\\.\\d+\\.\\d+)\\n'],
+      depNameTemplate: 'golang',
+      datasourceTemplate: 'golang-version',
+    },
+  ],
   packageRules: [
     {
       matchManagers: [
@@ -31,85 +49,38 @@
     },
     {
       matchManagers: [
-        'gomod',
-      ],
-      commitMessageTopic: 'Go {{depName}}',
-      automerge: false,
-    },
-    {
-      matchManagers: [
-        'npm',
-      ],
-      commitMessageTopic: 'npm {{depName}}',
-      automerge: false,
-      groupName: 'frontend dependencies',
-      matchFileNames: [
-        'frontend/**',
-      ],
-    },
-    {
-      matchManagers: [
-        'npm',
-      ],
-      matchDepTypes: [
-        'devDependencies',
-      ],
-      matchFileNames: [
-        'frontend/**',
-      ],
-      commitMessageTopic: 'npm dev {{depName}}',
-      automerge: true,
-      groupName: 'frontend dev dependencies',
-    },
-    {
-      matchManagers: [
-        'npm',
-      ],
-      matchFileNames: [
-        'frontend/**',
-      ],
-      automerge: true,
-      groupName: 'frontend type definitions',
-      matchPackageNames: [
-        '/^@types//',
-      ],
-    },
-    {
-      matchManagers: [
-        'npm',
-      ],
-      matchFileNames: [
-        'frontend/**',
-      ],
-      automerge: true,
-      groupName: 'frontend testing',
-      matchPackageNames: [
-        '/^vitest/',
-        '/^@vitest//',
-        '/^@testing-library//',
-      ],
-    },
-    {
-      matchManagers: [
-        'npm',
-      ],
-      matchFileNames: [
-        'frontend/**',
-      ],
-      automerge: true,
-      groupName: 'frontend linting',
-      matchPackageNames: [
-        '/^eslint/',
-        '/^typescript-eslint/',
-      ],
-    },
-    {
-      matchManagers: [
         'docker-compose',
         'dockerfile',
       ],
+      matchDepNames: ['!node', '!golang'],
       commitMessageTopic: 'Docker {{depName}}',
-      automerge: false,
+      automerge: true,
+    },
+    {
+      matchDepNames: ['node'],
+      groupName: 'node',
+      commitMessageTopic: 'Node.js',
+      automerge: true,
+    },
+    {
+      matchDepNames: ['golang'],
+      groupName: 'golang version',
+      commitMessageTopic: 'Go version',
+      automerge: true,
+    },
+    {
+      matchManagers: [
+        'npm',
+      ],
+      commitMessageTopic: 'Node {{depName}}',
+      automerge: true,
+    },
+    {
+      matchManagers: [
+        'gomod',
+      ],
+      commitMessageTopic: 'Go {{depName}}',
+      automerge: true,
     },
   ],
 }
