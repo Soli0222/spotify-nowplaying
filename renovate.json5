@@ -24,17 +24,23 @@
   customManagers: [
     {
       customType: 'regex',
-      fileMatch: ['^\\.github/workflows/.*\\.ya?ml$'],
+      managerFilePatterns: [
+        '/^\\.github/workflows/.*\\.ya?ml$/',
+      ],
       matchStrings: [
-        "node-version:\\s*\\[?['\"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)['\"]?\\]?",
+        'node-version:\\s*\\[?[\'"]?(?<currentValue>\\d+\\.\\d+\\.\\d+)[\'"]?\\]?',
       ],
       depNameTemplate: 'node',
       datasourceTemplate: 'docker',
     },
     {
       customType: 'regex',
-      fileMatch: ['go\\.mod$'],
-      matchStrings: ['go (?<currentValue>\\d+\\.\\d+\\.\\d+)\\n'],
+      managerFilePatterns: [
+        '/go\\.mod$/',
+      ],
+      matchStrings: [
+        'go (?<currentValue>\\d+\\.\\d+\\.\\d+)\\n',
+      ],
       depNameTemplate: 'golang',
       datasourceTemplate: 'golang-version',
     },
@@ -52,18 +58,25 @@
         'docker-compose',
         'dockerfile',
       ],
-      matchDepNames: ['!node', '!golang'],
+      matchDepNames: [
+        '!node',
+        '!golang',
+      ],
       commitMessageTopic: 'Docker {{depName}}',
       automerge: true,
     },
     {
-      matchDepNames: ['node'],
+      matchDepNames: [
+        'node',
+      ],
       groupName: 'node',
       commitMessageTopic: 'Node.js',
       automerge: true,
     },
     {
-      matchDepNames: ['golang'],
+      matchDepNames: [
+        'golang',
+      ],
       groupName: 'golang version',
       commitMessageTopic: 'Go version',
       automerge: true,
