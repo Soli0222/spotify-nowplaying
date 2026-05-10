@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Soli0222/spotify-nowplaying/internal/auth"
+	tokencrypto "github.com/Soli0222/spotify-nowplaying/internal/crypto"
 	"github.com/Soli0222/spotify-nowplaying/internal/handler"
 	"github.com/Soli0222/spotify-nowplaying/internal/metrics"
 	"github.com/Soli0222/spotify-nowplaying/internal/spotify"
@@ -122,6 +123,13 @@ func main() {
 	var db *store.Store
 	var jwtConfig auth.JWTConfig
 	if databaseURL != "" {
+		if os.Getenv("JWT_SECRET") == "" {
+			log.Fatal("Environment variable JWT_SECRET is required when database features are enabled")
+		}
+		if _, err := tokencrypto.GetDefaultEncryptor(); err != nil {
+			log.Fatalf("TOKEN_ENCRYPTION_KEY is required and must be a 32-byte raw or base64-encoded key: %v", err)
+		}
+
 		var err error
 		db, err = store.New(databaseURL)
 		if err != nil {
@@ -168,6 +176,7 @@ func main() {
 		// Protected routes (require JWT)
 		protected := api.Group("")
 		protected.Use(auth.JWTMiddleware(jwtConfig))
+		protected.Use(auth.CSRFMiddleware())
 
 		// User info
 		protected.GET("/me", settingsHandler.GetUserInfo)

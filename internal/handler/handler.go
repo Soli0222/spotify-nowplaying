@@ -3,14 +3,18 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
+	"github.com/Soli0222/spotify-nowplaying/internal/auth"
 	"github.com/Soli0222/spotify-nowplaying/internal/metrics"
 	"github.com/Soli0222/spotify-nowplaying/internal/spotify"
 
 	"github.com/labstack/echo/v4"
 )
+
+const legacySpotifyOAuthStateCookie = "legacy_spotify_oauth_state"
 
 // Platform はシェア先プラットフォームを表す
 type Platform string
@@ -70,8 +74,19 @@ func loginHandler(c echo.Context, callbackPath string) error {
 	baseURL := os.Getenv("BASE_URL")
 	redirectURI := baseURL + callbackPath
 
-	redirectURL := fmt.Sprintf("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
-		authURL, clientID, redirectURI, scope)
+	state, err := auth.GenerateRandomToken(16)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to generate state"})
+	}
+	auth.SetOAuthStateCookie(c, legacySpotifyOAuthStateCookie, state)
+
+	values := url.Values{}
+	values.Set("client_id", clientID)
+	values.Set("response_type", "code")
+	values.Set("redirect_uri", redirectURI)
+	values.Set("scope", scope)
+	values.Set("state", state)
+	redirectURL := authURL + "?" + values.Encode()
 
 	return c.Redirect(http.StatusFound, redirectURL)
 }
@@ -79,11 +94,18 @@ func loginHandler(c echo.Context, callbackPath string) error {
 // callbackHandler は共通のコールバックハンドラー処理
 func (h *Handler) callbackHandler(c echo.Context, platform Platform, platformLabel, homePath string) error {
 	code := c.QueryParam("code")
+	state := c.QueryParam("state")
 
 	if code == "" {
 		metrics.OAuthCallbacksTotal.WithLabelValues(platformLabel, "missing_code").Inc()
 		return c.String(http.StatusBadRequest, "Code parameter is missing.")
 	}
+
+	if err := auth.ValidateOAuthState(c, legacySpotifyOAuthStateCookie, state); err != nil {
+		metrics.OAuthCallbacksTotal.WithLabelValues(platformLabel, "invalid_state").Inc()
+		return c.String(http.StatusBadRequest, "Invalid OAuth state.")
+	}
+	auth.ClearOAuthStateCookie(c, legacySpotifyOAuthStateCookie)
 
 	baseURL := os.Getenv("BASE_URL")
 	var redirectURI string

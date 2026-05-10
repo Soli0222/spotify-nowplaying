@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Soli0222/spotify-nowplaying/internal/auth"
 	"github.com/Soli0222/spotify-nowplaying/internal/store"
@@ -74,8 +75,10 @@ func (h *MiAuthHandler) StartMiAuth(c echo.Context) error {
 		instanceURL = "https://" + instanceURL
 	}
 
-	// Remove trailing slash
-	instanceURL = strings.TrimSuffix(instanceURL, "/")
+	instanceURL, err = validatePublicHTTPSURL(strings.TrimSuffix(instanceURL, "/"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid instance_url"})
+	}
 
 	// Generate session ID
 	sessionID := uuid.New()
@@ -132,10 +135,16 @@ func (h *MiAuthHandler) CallbackMiAuth(c echo.Context) error {
 		return c.Redirect(http.StatusFound, "/dashboard?error=session_not_found")
 	}
 
-	// Call MiAuth check API
-	checkURL := fmt.Sprintf("%s/api/miauth/%s/check", session.InstanceURL, sessionID.String())
+	instanceURL, err := validatePublicHTTPSURL(session.InstanceURL)
+	if err != nil {
+		return c.Redirect(http.StatusFound, "/dashboard?error=invalid_instance")
+	}
 
-	resp, err := http.Post(checkURL, "application/json", bytes.NewBuffer([]byte("{}")))
+	// Call MiAuth check API
+	checkURL := fmt.Sprintf("%s/api/miauth/%s/check", instanceURL, sessionID.String())
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(checkURL, "application/json", bytes.NewBuffer([]byte("{}")))
 	if err != nil {
 		return c.Redirect(http.StatusFound, "/dashboard?error=check_failed")
 	}
@@ -156,7 +165,7 @@ func (h *MiAuthHandler) CallbackMiAuth(c echo.Context) error {
 	}
 
 	// Fetch Misskey user info (including avatar)
-	misskeyUser, err := h.getMisskeyUserInfo(session.InstanceURL, checkResp.Token)
+	misskeyUser, err := h.getMisskeyUserInfo(instanceURL, checkResp.Token)
 	if err != nil {
 		// If we can't get full user info, use what we have from checkResp
 		misskeyUser = &MisskeyUserInfo{
@@ -169,13 +178,13 @@ func (h *MiAuthHandler) CallbackMiAuth(c echo.Context) error {
 	}
 
 	// Extract host from instance URL
-	host := session.InstanceURL
-	if parsedURL, err := url.Parse(session.InstanceURL); err == nil {
+	host := instanceURL
+	if parsedURL, err := url.Parse(instanceURL); err == nil {
 		host = parsedURL.Host
 	}
 
 	// Save the token and user info to user
-	if err := h.store.UpdateMisskeyToken(ctx, session.UserID, session.InstanceURL, checkResp.Token, misskeyUser.ID, misskeyUser.Username, misskeyUser.AvatarURL, host); err != nil {
+	if err := h.store.UpdateMisskeyToken(ctx, session.UserID, instanceURL, checkResp.Token, misskeyUser.ID, misskeyUser.Username, misskeyUser.AvatarURL, host); err != nil {
 		return c.Redirect(http.StatusFound, "/dashboard?error=save_failed")
 	}
 
@@ -223,7 +232,7 @@ func (h *MiAuthHandler) getMisskeyUserInfo(instanceURL, accessToken string) (*Mi
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

@@ -434,28 +434,19 @@ function Dashboard() {
             {t('api.examples.description')}
           </p>
           
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>{t('api.examples.basicTitle')}:</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>{t('api.examples.withHeaderTitle')}:</h3>
           <div className="code-block">
-            <code>curl "{apiPostUrl}"</code>
+            <code>curl -H "Authorization: Bearer YOUR_TOKEN" "{apiPostUrl}"</code>
           </div>
-
-          {userInfo.api_header_token_enabled && (
-            <>
-              <h3 style={{ fontSize: '1rem', marginTop: '1rem', marginBottom: '0.5rem' }}>{t('api.examples.withHeaderTitle')}:</h3>
-              <div className="code-block">
-                <code>curl -H "Authorization: Bearer YOUR_TOKEN" "{apiPostUrl}"</code>
-              </div>
-            </>
-          )}
 
           <h3 style={{ fontSize: '1rem', marginTop: '1rem', marginBottom: '0.5rem' }}>{t('api.examples.misskeyOnlyTitle')}:</h3>
           <div className="code-block">
-            <code>curl "{apiPostUrl}?target=misskey"</code>
+            <code>curl -H "Authorization: Bearer YOUR_TOKEN" "{apiPostUrl}?target=misskey"</code>
           </div>
 
           <h3 style={{ fontSize: '1rem', marginTop: '1rem', marginBottom: '0.5rem' }}>{t('api.examples.twitterOnlyTitle')}:</h3>
           <div className="code-block">
-            <code>curl "{apiPostUrl}?target=twitter"</code>
+            <code>curl -H "Authorization: Bearer YOUR_TOKEN" "{apiPostUrl}?target=twitter"</code>
           </div>
         </div>
       </div>

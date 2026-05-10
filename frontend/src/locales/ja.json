@@ -38,14 +38,14 @@
     "title": "API設定",
     "urlToken": {
       "title": "API 投稿 URL",
-      "description": "このURLを呼び出すと、現在再生中のトラックを接続済みプラットフォームに投稿できます。",
+      "description": "このURLをヘッダートークン付きで呼び出すと、現在再生中のトラックを接続済みプラットフォームに投稿できます。",
       "copy": "コピー",
       "regenerate": "URLを再生成",
       "optional": "オプション: ?target=misskey または ?target=twitter を追加すると、特定のプラットフォームのみに投稿できます。"
     },
     "headerToken": {
-      "title": "ヘッダートークン（オプション）",
-      "description": "追加のセキュリティのためにヘッダートークンを有効にします。有効にすると、リクエストに Authorization: Bearer token ヘッダーが必要になります。",
+      "title": "ヘッダートークン",
+      "description": "API投稿には Authorization: Bearer token ヘッダーが必要です。トークンは生成時に一度だけ表示されます。",
       "enabled": "有効",
       "disabled": "無効",
       "status": "ステータス",
@@ -58,7 +58,7 @@
     "examples": {
       "title": "使用例",
       "description": "APIの呼び出し方法の例:",
-      "basicTitle": "基本（ヘッダートークンなし）",
+      "basicTitle": "基本",
       "withHeaderTitle": "ヘッダートークンあり",
       "misskeyOnlyTitle": "Misskeyのみに投稿",
       "twitterOnlyTitle": "Twitterのみに投稿"

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -32,10 +33,13 @@ func TestSpotifyAuthHandler_LoginSpotify(t *testing.T) {
 
 	location := rec.Header().Get("Location")
 	assert.Contains(t, location, "https://accounts.spotify.com/authorize")
-	assert.Contains(t, location, "client_id=test-client-id")
-	assert.Contains(t, location, "redirect_uri=http://localhost:8080/api/auth/spotify/callback")
-	assert.Contains(t, location, "user-read-currently-playing")
-	assert.Contains(t, location, "user-read-playback-state")
+	parsed, err := url.Parse(location)
+	require.NoError(t, err)
+	assert.Equal(t, "test-client-id", parsed.Query().Get("client_id"))
+	assert.Equal(t, "http://localhost:8080/api/auth/spotify/callback", parsed.Query().Get("redirect_uri"))
+	assert.Contains(t, parsed.Query().Get("scope"), "user-read-currently-playing")
+	assert.Contains(t, parsed.Query().Get("scope"), "user-read-playback-state")
+	assert.NotEmpty(t, parsed.Query().Get("state"))
 }
 
 func TestSpotifyAuthHandler_CheckAuth_NotAuthenticated(t *testing.T) {
