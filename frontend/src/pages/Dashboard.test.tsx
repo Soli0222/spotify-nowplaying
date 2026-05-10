@@ -261,7 +261,7 @@ describe('Dashboard - Usage Examples', () => {
     render(<Dashboard />)
 
     await waitFor(() => {
-      expect(screen.getByText(/Authorization: Bearer YOUR_TOKEN/)).toBeInTheDocument()
+      expect(screen.getAllByText(/Authorization: Bearer YOUR_TOKEN/).length).toBeGreaterThan(0)
     })
   })
 })

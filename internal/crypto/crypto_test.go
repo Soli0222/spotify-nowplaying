@@ -173,10 +173,25 @@ func TestEncryptToken_WithoutEnv(t *testing.T) {
 	t.Setenv("TOKEN_ENCRYPTION_KEY", "")
 
 	token := "my_secret_token"
-	result, err := EncryptToken(token)
+	_, err := EncryptToken(token)
+	assert.ErrorIs(t, err, ErrEncryptionNotConfigured)
+}
+
+func TestEncryptToken_WithBase64Env(t *testing.T) {
+	encryptorOnce = sync.Once{}
+	defaultEncryptor = nil
+	encryptorErr = nil
+
+	t.Setenv("TOKEN_ENCRYPTION_KEY", base64.StdEncoding.EncodeToString([]byte("12345678901234567890123456789012")))
+
+	token := "my_secret_token"
+	encrypted, err := EncryptToken(token)
 	require.NoError(t, err)
-	// Should return original token when encryption is not configured
-	assert.Equal(t, token, result)
+	assert.NotEqual(t, token, encrypted)
+
+	decrypted, err := DecryptToken(encrypted)
+	require.NoError(t, err)
+	assert.Equal(t, token, decrypted)
 }
 
 func TestDecryptToken_BackwardCompatibility(t *testing.T) {

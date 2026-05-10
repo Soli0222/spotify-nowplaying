@@ -38,14 +38,14 @@
     "title": "API Settings",
     "urlToken": {
       "title": "API Posting URL",
-      "description": "Call this URL to post your currently playing track to connected platforms.",
+      "description": "Call this URL with a header token to post your currently playing track to connected platforms.",
       "copy": "Copy",
       "regenerate": "Regenerate URL",
       "optional": "Optional: Add ?target=misskey or ?target=twitter to post to specific platform only."
     },
     "headerToken": {
-      "title": "Header Token (Optional)",
-      "description": "Enable header token for additional security. When enabled, requests must include Authorization: Bearer token header.",
+      "title": "Header Token",
+      "description": "API posting requires an Authorization: Bearer token header. The token is shown only once when generated.",
       "enabled": "Enabled",
       "disabled": "Disabled",
       "status": "Status",
@@ -58,7 +58,7 @@
     "examples": {
       "title": "Usage Examples",
       "description": "Examples of how to call the API:",
-      "basicTitle": "Basic (no header token)",
+      "basicTitle": "Basic",
       "withHeaderTitle": "With header token",
       "misskeyOnlyTitle": "Post to Misskey only",
       "twitterOnlyTitle": "Post to Twitter only"

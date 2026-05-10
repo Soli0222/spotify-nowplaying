@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/Soli0222/spotify-nowplaying/internal/store"
 	"github.com/labstack/echo/v4"
 )
+
+const spotifyOAuthStateCookie = "spotify_oauth_state"
 
 // SpotifyAuthHandler handles Spotify OAuth authentication for the frontend
 type SpotifyAuthHandler struct {
@@ -46,8 +49,19 @@ func (h *SpotifyAuthHandler) LoginSpotify(c echo.Context) error {
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	redirectURI := os.Getenv("BASE_URL") + "/api/auth/spotify/callback"
 
-	redirectURL := fmt.Sprintf("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
-		authURL, clientID, redirectURI, scope)
+	state, err := auth.GenerateRandomToken(16)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to generate state"})
+	}
+	auth.SetOAuthStateCookie(c, spotifyOAuthStateCookie, state)
+
+	values := url.Values{}
+	values.Set("client_id", clientID)
+	values.Set("response_type", "code")
+	values.Set("redirect_uri", redirectURI)
+	values.Set("scope", scope)
+	values.Set("state", state)
+	redirectURL := authURL + "?" + values.Encode()
 
 	return c.Redirect(http.StatusFound, redirectURL)
 }
@@ -56,6 +70,7 @@ func (h *SpotifyAuthHandler) LoginSpotify(c echo.Context) error {
 // GET /api/auth/spotify/callback
 func (h *SpotifyAuthHandler) CallbackSpotify(c echo.Context) error {
 	code := c.QueryParam("code")
+	state := c.QueryParam("state")
 	errorParam := c.QueryParam("error")
 
 	if errorParam != "" {
@@ -65,6 +80,11 @@ func (h *SpotifyAuthHandler) CallbackSpotify(c echo.Context) error {
 	if code == "" {
 		return c.Redirect(http.StatusFound, "/login?error=missing_code")
 	}
+
+	if err := auth.ValidateOAuthState(c, spotifyOAuthStateCookie, state); err != nil {
+		return c.Redirect(http.StatusFound, "/login?error=invalid_state")
+	}
+	auth.ClearOAuthStateCookie(c, spotifyOAuthStateCookie)
 
 	redirectURI := os.Getenv("BASE_URL") + "/api/auth/spotify/callback"
 

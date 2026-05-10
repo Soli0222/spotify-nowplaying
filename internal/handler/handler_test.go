@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -77,9 +78,12 @@ func TestNoteLoginHandler(t *testing.T) {
 
 	location := rec.Header().Get("Location")
 	assert.Contains(t, location, "https://accounts.spotify.com/authorize")
-	assert.Contains(t, location, "client_id=test-client-id")
-	assert.Contains(t, location, "redirect_uri=http://localhost/note/callback")
-	assert.Contains(t, location, "scope=user-read-currently-playing")
+	parsed, err := url.Parse(location)
+	require.NoError(t, err)
+	assert.Equal(t, "test-client-id", parsed.Query().Get("client_id"))
+	assert.Equal(t, "http://localhost/note/callback", parsed.Query().Get("redirect_uri"))
+	assert.Contains(t, parsed.Query().Get("scope"), "user-read-currently-playing")
+	assert.NotEmpty(t, parsed.Query().Get("state"))
 }
 
 func TestTweetLoginHandler(t *testing.T) {
@@ -98,8 +102,11 @@ func TestTweetLoginHandler(t *testing.T) {
 
 	location := rec.Header().Get("Location")
 	assert.Contains(t, location, "https://accounts.spotify.com/authorize")
-	assert.Contains(t, location, "client_id=test-client-id")
-	assert.Contains(t, location, "redirect_uri=http://localhost/tweet/callback")
+	parsed, err := url.Parse(location)
+	require.NoError(t, err)
+	assert.Equal(t, "test-client-id", parsed.Query().Get("client_id"))
+	assert.Equal(t, "http://localhost/tweet/callback", parsed.Query().Get("redirect_uri"))
+	assert.NotEmpty(t, parsed.Query().Get("state"))
 }
 
 func TestNoteCallbackHandler_MissingCode(t *testing.T) {
@@ -150,7 +157,8 @@ func TestNoteCallbackHandler_Success(t *testing.T) {
 	h := NewHandler(mockClient)
 
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/note/callback?code=test-code", nil)
+	req := httptest.NewRequest(http.MethodGet, "/note/callback?code=test-code&state=test-state", nil)
+	req.AddCookie(&http.Cookie{Name: legacySpotifyOAuthStateCookie, Value: "test-state"})
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -187,7 +195,8 @@ func TestTweetCallbackHandler_Success(t *testing.T) {
 	h := NewHandler(mockClient)
 
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/tweet/callback?code=test-code", nil)
+	req := httptest.NewRequest(http.MethodGet, "/tweet/callback?code=test-code&state=test-state", nil)
+	req.AddCookie(&http.Cookie{Name: legacySpotifyOAuthStateCookie, Value: "test-state"})
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 

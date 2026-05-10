@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,6 +22,8 @@ var (
 	ErrInvalidToken = errors.New("invalid token")
 	ErrExpiredToken = errors.New("expired token")
 	ErrMissingToken = errors.New("missing token")
+	ErrMissingState = errors.New("missing oauth state")
+	ErrInvalidState = errors.New("invalid oauth state")
 )
 
 // Claims represents the JWT claims
@@ -110,6 +114,8 @@ func ClearSessionCookie(c echo.Context, config JWTConfig) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   os.Getenv("ENV") == "production",
+		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	}
 	c.SetCookie(cookie)
@@ -184,4 +190,90 @@ func GeneratePKCEVerifier() (string, error) {
 func GeneratePKCEChallenge(verifier string) string {
 	hash := sha256.Sum256([]byte(verifier))
 	return base64.RawURLEncoding.EncodeToString(hash[:])
+}
+
+// SetOAuthStateCookie stores a one-time OAuth state value for callback validation.
+func SetOAuthStateCookie(c echo.Context, name, state string) {
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    state,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   os.Getenv("ENV") == "production",
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int((10 * time.Minute).Seconds()),
+	}
+	c.SetCookie(cookie)
+}
+
+// ClearOAuthStateCookie removes a previously stored OAuth state cookie.
+func ClearOAuthStateCookie(c echo.Context, name string) {
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   os.Getenv("ENV") == "production",
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	}
+	c.SetCookie(cookie)
+}
+
+// ValidateOAuthState compares the callback state with the stored state cookie.
+func ValidateOAuthState(c echo.Context, cookieName, receivedState string) error {
+	if receivedState == "" {
+		return ErrMissingState
+	}
+
+	cookie, err := c.Cookie(cookieName)
+	if err != nil || cookie.Value == "" {
+		return ErrMissingState
+	}
+	if cookie.Value != receivedState {
+		return ErrInvalidState
+	}
+	return nil
+}
+
+// CSRFMiddleware rejects unsafe cross-origin requests that would include the session cookie.
+func CSRFMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			switch c.Request().Method {
+			case http.MethodGet, http.MethodHead, http.MethodOptions:
+				return next(c)
+			}
+
+			if !sameOriginRequest(c.Request()) {
+				return c.JSON(http.StatusForbidden, map[string]string{"error": "cross-origin request rejected"})
+			}
+
+			return next(c)
+		}
+	}
+}
+
+func sameOriginRequest(r *http.Request) bool {
+	requestHost := r.Host
+	if requestHost == "" {
+		requestHost = r.URL.Host
+	}
+	if requestHost == "" {
+		return true
+	}
+
+	for _, header := range []string{"Origin", "Referer"} {
+		value := r.Header.Get(header)
+		if value == "" {
+			continue
+		}
+		parsed, err := url.Parse(value)
+		if err != nil || parsed.Host == "" {
+			return false
+		}
+		return strings.EqualFold(parsed.Host, requestHost)
+	}
+
+	return true
 }

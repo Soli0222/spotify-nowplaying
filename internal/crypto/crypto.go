@@ -42,7 +42,17 @@ func GetDefaultEncryptor() (*TokenEncryptor, error) {
 			return
 		}
 
-		defaultEncryptor, encryptorErr = NewTokenEncryptor([]byte(key))
+		keyBytes := []byte(key)
+		if len(keyBytes) != 32 {
+			decoded, err := base64.StdEncoding.DecodeString(key)
+			if err != nil {
+				encryptorErr = ErrInvalidKey
+				return
+			}
+			keyBytes = decoded
+		}
+
+		defaultEncryptor, encryptorErr = NewTokenEncryptor(keyBytes)
 	})
 
 	return defaultEncryptor, encryptorErr
@@ -108,8 +118,7 @@ func (e *TokenEncryptor) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// EncryptToken encrypts a token using the default encryptor
-// Returns the original token if encryption is not configured
+// EncryptToken encrypts a token using the default encryptor.
 func EncryptToken(token string) (string, error) {
 	if token == "" {
 		return "", nil
@@ -117,10 +126,6 @@ func EncryptToken(token string) (string, error) {
 
 	encryptor, err := GetDefaultEncryptor()
 	if err != nil {
-		if errors.Is(err, ErrEncryptionNotConfigured) {
-			// Return original token if encryption is not configured
-			return token, nil
-		}
 		return "", err
 	}
 
@@ -138,7 +143,7 @@ func DecryptToken(token string) (string, error) {
 	encryptor, err := GetDefaultEncryptor()
 	if err != nil {
 		if errors.Is(err, ErrEncryptionNotConfigured) {
-			// Return original token if encryption is not configured
+			// Reading old plaintext rows is allowed for migration/backward compatibility.
 			return token, nil
 		}
 		return "", err

@@ -82,25 +82,26 @@ func (h *APIPostHandler) PostNowPlaying(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, PostResponse{Success: false, Message: "token not found"})
 	}
 
-	// Check header token if enabled
-	if user.APIHeaderTokenEnabled {
-		authHeader := c.Request().Header.Get("Authorization")
-		if authHeader == "" {
-			return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "authorization header required"})
-		}
+	if !user.APIHeaderTokenEnabled || !user.APIHeaderTokenHash.Valid || user.APIHeaderTokenHash.String == "" {
+		return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "header token is required"})
+	}
 
-		// Expect "Bearer <token>"
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "invalid authorization header format"})
-		}
+	authHeader := c.Request().Header.Get("Authorization")
+	if authHeader == "" {
+		return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "authorization header required"})
+	}
 
-		providedToken := parts[1]
-		providedHash := auth.HashToken(providedToken)
+	// Expect "Bearer <token>"
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+		return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "invalid authorization header format"})
+	}
 
-		if !user.APIHeaderTokenHash.Valid || providedHash != user.APIHeaderTokenHash.String {
-			return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "invalid token"})
-		}
+	providedToken := parts[1]
+	providedHash := auth.HashToken(providedToken)
+
+	if providedHash != user.APIHeaderTokenHash.String {
+		return c.JSON(http.StatusUnauthorized, PostResponse{Success: false, Message: "invalid token"})
 	}
 
 	// Get target from query param (default: both)
@@ -222,6 +223,11 @@ func (h *APIPostHandler) postToMisskey(instanceURL, accessToken, text string) er
 	// Ensure instance URL has protocol
 	if !strings.HasPrefix(instanceURL, "http://") && !strings.HasPrefix(instanceURL, "https://") {
 		instanceURL = "https://" + instanceURL
+	}
+	var err error
+	instanceURL, err = validatePublicHTTPSURL(strings.TrimSuffix(instanceURL, "/"))
+	if err != nil {
+		return fmt.Errorf("invalid misskey instance URL: %w", err)
 	}
 
 	reqBody := MisskeyNoteRequest{
