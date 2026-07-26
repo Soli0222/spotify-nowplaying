@@ -67,6 +67,7 @@
         '!golang',
       ],
       commitMessageTopic: 'Docker {{depName}}',
+      semanticCommitType: 'fix',
       automerge: true,
     },
     {
@@ -75,6 +76,7 @@
       ],
       groupName: 'node',
       commitMessageTopic: 'Node.js',
+      semanticCommitType: 'fix',
       automerge: true,
     },
     {
@@ -83,6 +85,7 @@
       ],
       groupName: 'golang version',
       commitMessageTopic: 'Go version',
+      semanticCommitType: 'fix',
       automerge: true,
     },
     {
@@ -90,6 +93,7 @@
         'npm',
       ],
       commitMessageTopic: 'Node {{depName}}',
+      semanticCommitType: 'fix',
       automerge: true,
     },
     {
@@ -97,6 +101,7 @@
         'gomod',
       ],
       commitMessageTopic: 'Go {{depName}}',
+      semanticCommitType: 'fix',
       automerge: true,
     },
   ],
