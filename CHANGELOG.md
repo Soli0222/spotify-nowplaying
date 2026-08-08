@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.1](https://github.com/Soli0222/spotify-nowplaying/compare/v4.4.0...v4.4.1) (2026-08-08)
+
+
+### バグ修正・依存関係の更新
+
+* bump builder image to golang 1.26.5 to match go.mod ([#337](https://github.com/Soli0222/spotify-nowplaying/issues/337)) ([cf6096a](https://github.com/Soli0222/spotify-nowplaying/commit/cf6096ac3b1825da932ba0af1b52512758b88af0))
+
 ## [4.4.0](https://github.com/Soli0222/spotify-nowplaying/compare/v4.3.1...v4.4.0) (2026-08-08)
 
 
