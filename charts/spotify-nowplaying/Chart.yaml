@@ -4,5 +4,5 @@ description: A Helm chart for the Spotify Now Playing application
 type: application
 sources:
   - https://github.com/Soli0222/spotify-nowplaying
-version: 3.0.5
+version: 3.0.6
 appVersion: "4.4.2"
