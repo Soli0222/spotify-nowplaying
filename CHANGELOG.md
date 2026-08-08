@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.0](https://github.com/Soli0222/spotify-nowplaying/compare/v4.3.1...v4.4.0) (2026-08-08)
+
+
+### 新機能
+
+* publish helm chart as OCI artifact from this repo ([#335](https://github.com/Soli0222/spotify-nowplaying/issues/335)) ([b8d572d](https://github.com/Soli0222/spotify-nowplaying/commit/b8d572d72aeefd5cb659960a080da10cb0c04212))
+
 ## [4.3.1](https://github.com/Soli0222/spotify-nowplaying/compare/4.3.0...v4.3.1) (2026-07-27)
 
 
