@@ -1,0 +1,63 @@
+{{- if .Values.monitoring.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "chart.fullname" . }}
+  {{- if .Values.monitoring.prometheusRule.namespace }}
+  namespace: {{ .Values.monitoring.prometheusRule.namespace }}
+  {{- end }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.monitoring.prometheusRule.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  groups:
+    - name: {{ include "chart.fullname" . }}
+      rules:
+        {{- if .Values.monitoring.prometheusRule.rules.serviceDown.enabled }}
+        - alert: SpotifyNowPlayingDown
+          expr: up{job="{{ include "chart.fullname" . }}"} == 0
+          for: {{ .Values.monitoring.prometheusRule.rules.serviceDown.for }}
+          labels:
+            severity: {{ .Values.monitoring.prometheusRule.rules.serviceDown.severity }}
+          annotations:
+            summary: "Spotify NowPlaying is down"
+            description: "Spotify NowPlaying instance {{ "{{" }} $labels.instance {{ "}}" }} has been down for more than {{ .Values.monitoring.prometheusRule.rules.serviceDown.for }}."
+        {{- end }}
+
+        {{- if .Values.monitoring.prometheusRule.rules.errorRate.enabled }}
+        - alert: SpotifyNowPlayingHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{job="{{ include "chart.fullname" . }}", status=~"5.."}[5m])) /
+              sum(rate(http_requests_total{job="{{ include "chart.fullname" . }}"}[5m]))
+            ) * 100 > {{ .Values.monitoring.prometheusRule.rules.errorRate.threshold }}
+          for: {{ .Values.monitoring.prometheusRule.rules.errorRate.for }}
+          labels:
+            severity: {{ .Values.monitoring.prometheusRule.rules.errorRate.severity }}
+          annotations:
+            summary: "Spotify NowPlaying high error rate"
+            description: "Spotify NowPlaying error rate is above {{ .Values.monitoring.prometheusRule.rules.errorRate.threshold }}% for more than {{ .Values.monitoring.prometheusRule.rules.errorRate.for }}."
+        {{- end }}
+
+        {{- if .Values.monitoring.prometheusRule.rules.slowApiResponse.enabled }}
+        - alert: SpotifyNowPlayingSlowApiResponse
+          expr: |
+            histogram_quantile(0.95, sum(rate(spotify_api_request_duration_seconds_bucket{job="{{ include "chart.fullname" . }}"}[5m])) by (le)) > {{ .Values.monitoring.prometheusRule.rules.slowApiResponse.threshold }}
+          for: {{ .Values.monitoring.prometheusRule.rules.slowApiResponse.for }}
+          labels:
+            severity: {{ .Values.monitoring.prometheusRule.rules.slowApiResponse.severity }}
+          annotations:
+            summary: "Spotify NowPlaying slow API response"
+            description: "Spotify NowPlaying 95th percentile API response time is above {{ .Values.monitoring.prometheusRule.rules.slowApiResponse.threshold }}s for more than {{ .Values.monitoring.prometheusRule.rules.slowApiResponse.for }}."
+        {{- end }}
+
+        {{- with .Values.monitoring.prometheusRule.additionalRules }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}
