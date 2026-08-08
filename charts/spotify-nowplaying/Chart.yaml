@@ -1,0 +1,8 @@
+apiVersion: v2
+name: spotify-nowplaying
+description: A Helm chart for the Spotify Now Playing application
+type: application
+sources:
+  - https://github.com/Soli0222/spotify-nowplaying
+version: 0.0.0
+appVersion: "0.0.0"
