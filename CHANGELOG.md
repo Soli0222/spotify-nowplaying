@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.2](https://github.com/Soli0222/spotify-nowplaying/compare/v4.4.1...v4.4.2) (2026-08-08)
+
+
+### バグ修正・依存関係の更新
+
+* pin pnpm version in Dockerfile to match packageManager ([#339](https://github.com/Soli0222/spotify-nowplaying/issues/339)) ([efb5b41](https://github.com/Soli0222/spotify-nowplaying/commit/efb5b41eff9e317ba14d3c0a967a7dff7173793c))
+
 ## [4.4.1](https://github.com/Soli0222/spotify-nowplaying/compare/v4.4.0...v4.4.1) (2026-08-08)
 
 
