@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.5.0](https://github.com/Soli0222/spotify-nowplaying/compare/v4.4.2...v4.5.0) (2026-08-14)
+
+
+### 新機能
+
+* **ci:** rebuild the release pipeline as a DAG on shared workflows ([#342](https://github.com/Soli0222/spotify-nowplaying/issues/342)) ([97e1773](https://github.com/Soli0222/spotify-nowplaying/commit/97e1773170b4157c8f377eabb85b781ee936e067))
+
+
+### バグ修正・依存関係の更新
+
+* **deps:** update go go to v1.26.6 ([#345](https://github.com/Soli0222/spotify-nowplaying/issues/345)) ([7d85134](https://github.com/Soli0222/spotify-nowplaying/commit/7d85134525d18a93462c5a20e3459d118c5ed310))
+* **deps:** update go version to v1.26.6 ([#346](https://github.com/Soli0222/spotify-nowplaying/issues/346)) ([3b03c20](https://github.com/Soli0222/spotify-nowplaying/commit/3b03c20f4ab36dee2ad052e9a72f06cfd683e6c0))
+
 ## [4.4.2](https://github.com/Soli0222/spotify-nowplaying/compare/v4.4.1...v4.4.2) (2026-08-08)
 
 
