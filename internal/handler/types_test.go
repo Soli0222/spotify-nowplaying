@@ -54,21 +54,6 @@ func TestMisskeyNoteRequest_JSONMarshal(t *testing.T) {
 	assert.Equal(t, "public", unmarshaled["visibility"])
 }
 
-func TestTwitterTweetRequest_JSONMarshal(t *testing.T) {
-	req := TwitterTweetRequest{
-		Text: "Hello Twitter",
-	}
-
-	data, err := json.Marshal(req)
-	assert.NoError(t, err)
-
-	var unmarshaled map[string]string
-	err = json.Unmarshal(data, &unmarshaled)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "Hello Twitter", unmarshaled["text"])
-}
-
 func TestUserInfoResponse_JSONMarshal(t *testing.T) {
 	resp := UserInfoResponse{
 		ID:                    "user-123",

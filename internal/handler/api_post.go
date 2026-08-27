@@ -2,7 +2,9 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 	"github.com/Soli0222/spotify-nowplaying/internal/auth"
 	"github.com/Soli0222/spotify-nowplaying/internal/spotify"
 	"github.com/Soli0222/spotify-nowplaying/internal/store"
+	"github.com/Soli0222/spotify-nowplaying/internal/twitter"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -20,14 +23,30 @@ import (
 type APIPostHandler struct {
 	store         *store.Store
 	spotifyClient spotify.Client
+	twitterClient twitter.Client
 }
 
 // NewAPIPostHandler creates a new APIPostHandler
-func NewAPIPostHandler(s *store.Store, client spotify.Client) *APIPostHandler {
+func NewAPIPostHandler(s *store.Store, client spotify.Client, twitterClient twitter.Client) *APIPostHandler {
 	return &APIPostHandler{
 		store:         s,
 		spotifyClient: client,
+		twitterClient: twitterClient,
 	}
+}
+
+// twitterTokenLeeway is how long before the recorded expiry the Twitter access
+// token is refreshed. Twitter access tokens are valid for two hours.
+const twitterTokenLeeway = 5 * time.Minute
+
+// twitterTokenNeedsRefresh reports whether the access token expiring at
+// expiresAt should be refreshed before use. An unknown expiry (zero value, e.g.
+// a row written before expiries were stored) is treated as expired.
+func twitterTokenNeedsRefresh(expiresAt time.Time, now time.Time) bool {
+	if expiresAt.IsZero() {
+		return true
+	}
+	return !now.Add(twitterTokenLeeway).Before(expiresAt)
 }
 
 // PostTarget represents the target platform for posting
@@ -51,11 +70,6 @@ type MisskeyNoteRequest struct {
 	I          string `json:"i"`
 	Text       string `json:"text"`
 	Visibility string `json:"visibility,omitempty"`
-}
-
-// TwitterTweetRequest represents the request body for creating a Twitter tweet
-type TwitterTweetRequest struct {
-	Text string `json:"text"`
 }
 
 // PostNowPlaying posts the currently playing track to configured platforms
@@ -173,15 +187,19 @@ func (h *APIPostHandler) PostNowPlaying(c echo.Context) error {
 	}
 
 	results := make(map[string]string)
+	attempted := 0
+	succeeded := 0
 
 	// Post to Misskey
 	if target == PostTargetMisskey || target == PostTargetBoth {
 		if user.MisskeyAccessToken.Valid && user.MisskeyAccessToken.String != "" {
+			attempted++
 			err := h.postToMisskey(user.MisskeyInstanceURL.String, user.MisskeyAccessToken.String, postText)
 			if err != nil {
 				results["misskey"] = fmt.Sprintf("error: %s", err.Error())
 			} else {
 				results["misskey"] = "success"
+				succeeded++
 			}
 		} else {
 			results["misskey"] = "not connected"
@@ -191,28 +209,33 @@ func (h *APIPostHandler) PostNowPlaying(c echo.Context) error {
 	// Post to Twitter
 	if target == PostTargetTwitter || target == PostTargetBoth {
 		if user.TwitterAccessToken.Valid && user.TwitterAccessToken.String != "" {
-			err := h.postToTwitter(user.TwitterAccessToken.String, postText)
-			if err != nil {
-				results["twitter"] = fmt.Sprintf("error: %s", err.Error())
-			} else {
+			attempted++
+			err := h.postToTwitter(ctx, user.ID, postText)
+			switch {
+			case err == nil:
 				results["twitter"] = "success"
+				succeeded++
+			case errors.Is(err, twitter.ErrReauthRequired):
+				results["twitter"] = "error: twitter token expired, reconnect required"
+			case errors.Is(err, store.ErrTwitterNotConnected):
+				results["twitter"] = "not connected"
+			default:
+				results["twitter"] = fmt.Sprintf("error: %s", err.Error())
 			}
 		} else {
 			results["twitter"] = "not connected"
 		}
 	}
 
-	// Check if any succeeded
-	anySuccess := false
-	for _, v := range results {
-		if v == "success" {
-			anySuccess = true
-			break
-		}
+	// Every platform we actually tried to post to failed: report it as an error
+	// so callers and monitoring do not read a 200 as a successful post.
+	status := http.StatusOK
+	if attempted > 0 && succeeded == 0 {
+		status = http.StatusBadGateway
 	}
 
-	return c.JSON(http.StatusOK, PostResponse{
-		Success: anySuccess,
+	return c.JSON(status, PostResponse{
+		Success: succeeded > 0,
 		Message: postText,
 		Results: results,
 	})
@@ -264,36 +287,74 @@ func (h *APIPostHandler) postToMisskey(instanceURL, accessToken, text string) er
 	return nil
 }
 
-// postToTwitter posts a tweet to Twitter
-func (h *APIPostHandler) postToTwitter(accessToken, text string) error {
-	reqBody := TwitterTweetRequest{
-		Text: text,
-	}
+// twitterTokenStore is the part of the store postTweetWithRefresh needs.
+// *store.Store implements it.
+type twitterTokenStore interface {
+	EnsureTwitterToken(ctx context.Context, userID uuid.UUID, refresh func(context.Context, store.TwitterTokens) (*store.TwitterTokens, error)) (store.TwitterTokens, error)
+}
 
-	jsonBody, err := json.Marshal(reqBody)
+// twitterPostTimeout bounds a single post, including up to two refreshes.
+const twitterPostTimeout = 60 * time.Second
+
+// postToTwitter posts a tweet as the given user.
+func (h *APIPostHandler) postToTwitter(ctx context.Context, userID uuid.UUID, text string) error {
+	// Detach from the request: if the caller hangs up mid-refresh, the rotated
+	// refresh token must still be written, otherwise the account is left with a
+	// refresh token Twitter has already invalidated.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), twitterPostTimeout)
+	defer cancel()
+
+	return postTweetWithRefresh(ctx, h.store, h.twitterClient, userID, text)
+}
+
+// postTweetWithRefresh posts a tweet, refreshing the stored access token before
+// posting when it is expired (or about to be), and once more if Twitter answers
+// 401 anyway. Refreshes run under the store's per-user lock, so concurrent posts
+// cannot invalidate each other's rotated refresh token.
+func postTweetWithRefresh(ctx context.Context, tokenStore twitterTokenStore, client twitter.Client, userID uuid.UUID, text string) error {
+	tokens, err := tokenStore.EnsureTwitterToken(ctx, userID, func(ctx context.Context, current store.TwitterTokens) (*store.TwitterTokens, error) {
+		if !twitterTokenNeedsRefresh(current.ExpiresAt, time.Now()) {
+			return nil, nil
+		}
+		return refreshTwitterTokens(ctx, client, current.RefreshToken)
+	})
 	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
+		return err
 	}
 
-	req, err := http.NewRequest("POST", "https://api.twitter.com/2/tweets", bytes.NewBuffer(jsonBody))
+	postErr := client.PostTweet(ctx, tokens.AccessToken, text)
+	if apiErr, ok := twitter.IsAPIError(postErr); !ok || apiErr.StatusCode != http.StatusUnauthorized {
+		return postErr
+	}
+
+	// The token was rejected even though it still looked valid (clock skew, a
+	// token revoked on Twitter's side, ...). Refresh once and retry.
+	rejected := tokens.AccessToken
+	tokens, err = tokenStore.EnsureTwitterToken(ctx, userID, func(ctx context.Context, current store.TwitterTokens) (*store.TwitterTokens, error) {
+		if current.AccessToken != rejected {
+			// A concurrent post already refreshed it; use what it stored.
+			return nil, nil
+		}
+		return refreshTwitterTokens(ctx, client, current.RefreshToken)
+	})
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+accessToken)
+	return client.PostTweet(ctx, tokens.AccessToken, text)
+}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+// refreshTwitterTokens exchanges the refresh token for a new set of tokens.
+// Twitter rotates the refresh token, so all three values have to be stored.
+func refreshTwitterTokens(ctx context.Context, client twitter.Client, refreshToken string) (*store.TwitterTokens, error) {
+	tokens, err := client.RefreshToken(ctx, refreshToken)
 	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("twitter api error: %d - %s", resp.StatusCode, string(body))
+		return nil, err
 	}
 
-	return nil
+	return &store.TwitterTokens{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+		ExpiresAt:    time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second),
+	}, nil
 }
