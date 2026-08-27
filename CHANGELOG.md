@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.5.2](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.1...v4.5.2) (2026-08-27)
+
+
+### バグ修正・依存関係の更新
+
+* **ci:** Go のバージョンを go.mod と Dockerfile で必ず揃える ([#351](https://github.com/Soli0222/spotify-nowplaying/issues/351)) ([c58caff](https://github.com/Soli0222/spotify-nowplaying/commit/c58caffb069975f295e03467cad9856fe59490b7))
+
 ## [4.5.1](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.0...v4.5.1) (2026-08-27)
 
 
