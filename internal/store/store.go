@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -327,6 +328,106 @@ func (s *Store) UpdateTwitterToken(ctx context.Context, userID uuid.UUID, access
 		return fmt.Errorf("failed to update twitter token: %w", err)
 	}
 	return nil
+}
+
+// TwitterTokens holds the Twitter OAuth tokens stored for a user.
+type TwitterTokens struct {
+	AccessToken  string
+	RefreshToken string
+	ExpiresAt    time.Time
+}
+
+// ErrTwitterNotConnected is returned when the user has no Twitter access token stored.
+var ErrTwitterNotConnected = errors.New("twitter is not connected")
+
+// EnsureTwitterToken hands the currently stored Twitter tokens to refresh and
+// persists whatever it returns. The user row is locked for the duration, so
+// concurrent posts for the same user cannot refresh at the same time and race
+// each other into invalidating the rotated refresh token; refresh therefore
+// always sees the tokens the previous caller has just written.
+//
+// refresh may return (nil, nil) to signal that the stored tokens are still good,
+// in which case nothing is written.
+func (s *Store) EnsureTwitterToken(ctx context.Context, userID uuid.UUID, refresh func(ctx context.Context, current TwitterTokens) (*TwitterTokens, error)) (TwitterTokens, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return TwitterTokens{}, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var (
+		accessToken  sql.NullString
+		refreshToken sql.NullString
+		expiresAt    sql.NullTime
+	)
+	err = tx.QueryRowContext(ctx, `
+		SELECT twitter_access_token, twitter_refresh_token, twitter_token_expires_at
+		FROM users
+		WHERE id = $1
+		FOR UPDATE
+	`, userID).Scan(&accessToken, &refreshToken, &expiresAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return TwitterTokens{}, ErrTwitterNotConnected
+		}
+		return TwitterTokens{}, fmt.Errorf("failed to lock twitter token: %w", err)
+	}
+
+	if !accessToken.Valid || accessToken.String == "" {
+		return TwitterTokens{}, ErrTwitterNotConnected
+	}
+
+	current := TwitterTokens{}
+	current.AccessToken, err = crypto.DecryptToken(accessToken.String)
+	if err != nil {
+		return TwitterTokens{}, fmt.Errorf("failed to decrypt twitter access token: %w", err)
+	}
+	if refreshToken.Valid && refreshToken.String != "" {
+		current.RefreshToken, err = crypto.DecryptToken(refreshToken.String)
+		if err != nil {
+			return TwitterTokens{}, fmt.Errorf("failed to decrypt twitter refresh token: %w", err)
+		}
+	}
+	if expiresAt.Valid {
+		current.ExpiresAt = expiresAt.Time
+	}
+
+	updated, err := refresh(ctx, current)
+	if err != nil {
+		return TwitterTokens{}, err
+	}
+	if updated == nil {
+		if err := tx.Commit(); err != nil {
+			return TwitterTokens{}, fmt.Errorf("failed to commit transaction: %w", err)
+		}
+		return current, nil
+	}
+
+	encAccessToken, err := crypto.EncryptToken(updated.AccessToken)
+	if err != nil {
+		return TwitterTokens{}, fmt.Errorf("failed to encrypt twitter access token: %w", err)
+	}
+	encRefreshToken, err := crypto.EncryptToken(updated.RefreshToken)
+	if err != nil {
+		return TwitterTokens{}, fmt.Errorf("failed to encrypt twitter refresh token: %w", err)
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE users SET
+			twitter_access_token = $2,
+			twitter_refresh_token = $3,
+			twitter_token_expires_at = $4,
+			updated_at = NOW()
+		WHERE id = $1
+	`, userID, encAccessToken, encRefreshToken, updated.ExpiresAt); err != nil {
+		return TwitterTokens{}, fmt.Errorf("failed to update twitter token: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return TwitterTokens{}, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return *updated, nil
 }
 
 // UpdateSpotifyToken updates the Spotify token for a user

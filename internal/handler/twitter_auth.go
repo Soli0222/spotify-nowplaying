@@ -1,41 +1,32 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Soli0222/spotify-nowplaying/internal/auth"
 	"github.com/Soli0222/spotify-nowplaying/internal/store"
+	"github.com/Soli0222/spotify-nowplaying/internal/twitter"
 	"github.com/labstack/echo/v4"
 )
 
 // TwitterAuthHandler handles Twitter OAuth 2.0 PKCE authentication
 type TwitterAuthHandler struct {
-	store     *store.Store
-	jwtConfig auth.JWTConfig
+	store         *store.Store
+	twitterClient twitter.Client
+	jwtConfig     auth.JWTConfig
 }
 
 // NewTwitterAuthHandler creates a new TwitterAuthHandler
-func NewTwitterAuthHandler(s *store.Store, jwtConfig auth.JWTConfig) *TwitterAuthHandler {
+func NewTwitterAuthHandler(s *store.Store, twitterClient twitter.Client, jwtConfig auth.JWTConfig) *TwitterAuthHandler {
 	return &TwitterAuthHandler{
-		store:     s,
-		jwtConfig: jwtConfig,
+		store:         s,
+		twitterClient: twitterClient,
+		jwtConfig:     jwtConfig,
 	}
-}
-
-// TwitterTokenResponse is the response from Twitter token endpoint
-type TwitterTokenResponse struct {
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
 }
 
 // StartTwitterAuth starts the Twitter OAuth 2.0 PKCE flow
@@ -132,57 +123,24 @@ func (h *TwitterAuthHandler) CallbackTwitterAuth(c echo.Context) error {
 	}
 
 	// Exchange code for tokens
-	clientID := os.Getenv("TWITTER_CLIENT_ID")
-	clientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
 	redirectURI := os.Getenv("BASE_URL") + "/api/twitter/callback"
-
-	data := url.Values{}
-	data.Set("code", code)
-	data.Set("grant_type", "authorization_code")
-	data.Set("redirect_uri", redirectURI)
-	data.Set("code_verifier", session.CodeVerifier)
-
-	req, err := http.NewRequest("POST", "https://api.twitter.com/2/oauth2/token", strings.NewReader(data.Encode()))
+	tokens, err := h.twitterClient.ExchangeToken(ctx, code, redirectURI, session.CodeVerifier)
 	if err != nil {
-		return c.Redirect(http.StatusFound, "/dashboard?error=request_failed")
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth(clientID, clientSecret)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return c.Redirect(http.StatusFound, "/dashboard?error=exchange_failed")
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return c.Redirect(http.StatusFound, "/dashboard?error=read_failed")
-	}
-
-	if resp.StatusCode != http.StatusOK {
 		return c.Redirect(http.StatusFound, "/dashboard?error=token_failed")
 	}
 
-	var tokenResp TwitterTokenResponse
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return c.Redirect(http.StatusFound, "/dashboard?error=parse_failed")
-	}
-
 	// Calculate expiration time
-	expiresAt := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	expiresAt := time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
 
 	// Fetch Twitter user info
-	twitterUser, err := h.getTwitterUserInfo(tokenResp.AccessToken)
+	twitterUser, err := h.twitterClient.GetUserInfo(ctx, tokens.AccessToken)
 	if err != nil {
 		// If we can't get user info, still save the token but with empty user info
-		twitterUser = &TwitterUserInfo{}
+		twitterUser = &twitter.UserInfo{}
 	}
 
 	// Save the token and user info to user
-	if err := h.store.UpdateTwitterToken(ctx, session.UserID, tokenResp.AccessToken, tokenResp.RefreshToken, expiresAt, twitterUser.ID, twitterUser.Username, twitterUser.ProfileImageURL); err != nil {
+	if err := h.store.UpdateTwitterToken(ctx, session.UserID, tokens.AccessToken, tokens.RefreshToken, expiresAt, twitterUser.ID, twitterUser.Username, twitterUser.ProfileImageURL); err != nil {
 		return c.Redirect(http.StatusFound, "/dashboard?error=save_failed")
 	}
 
@@ -190,47 +148,6 @@ func (h *TwitterAuthHandler) CallbackTwitterAuth(c echo.Context) error {
 	_ = h.store.DeleteTwitterPKCESession(ctx, state)
 
 	return c.Redirect(http.StatusFound, "/dashboard?success=twitter_connected")
-}
-
-// RefreshTwitterToken refreshes the Twitter access token
-func (h *TwitterAuthHandler) RefreshTwitterToken(ctx echo.Context, userID string, refreshToken string) (*TwitterTokenResponse, error) {
-	clientID := os.Getenv("TWITTER_CLIENT_ID")
-	clientSecret := os.Getenv("TWITTER_CLIENT_SECRET")
-
-	data := url.Values{}
-	data.Set("refresh_token", refreshToken)
-	data.Set("grant_type", "refresh_token")
-
-	req, err := http.NewRequest("POST", "https://api.twitter.com/2/oauth2/token", strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth(clientID, clientSecret)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("refresh failed: %s", string(body))
-	}
-
-	var tokenResp TwitterTokenResponse
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
-		return nil, err
-	}
-
-	return &tokenResp, nil
 }
 
 // DisconnectTwitter disconnects Twitter from the user account
@@ -247,51 +164,4 @@ func (h *TwitterAuthHandler) DisconnectTwitter(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "twitter disconnected"})
-}
-
-// TwitterUserInfo represents Twitter user information
-type TwitterUserInfo struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Username        string `json:"username"`
-	ProfileImageURL string `json:"profile_image_url"`
-}
-
-// TwitterUserResponse represents the response from Twitter users/me endpoint
-type TwitterUserResponse struct {
-	Data TwitterUserInfo `json:"data"`
-}
-
-// getTwitterUserInfo fetches the Twitter user information
-func (h *TwitterAuthHandler) getTwitterUserInfo(accessToken string) (*TwitterUserInfo, error) {
-	req, err := http.NewRequest("GET", "https://api.twitter.com/2/users/me?user.fields=profile_image_url", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("twitter api error: %d - %s", resp.StatusCode, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var userResp TwitterUserResponse
-	if err := json.Unmarshal(body, &userResp); err != nil {
-		return nil, err
-	}
-
-	return &userResp.Data, nil
 }

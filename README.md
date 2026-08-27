@@ -73,7 +73,7 @@ spotify-nowplaying/
 │   │   ├── spotify_auth.go  # Spotify OAuth（フロントエンド用）
 │   │   ├── miauth.go        # MiAuth フロー
 │   │   ├── twitter_auth.go  # Twitter OAuth 2.0 PKCE
-│   │   ├── api_post.go      # API 直接投稿
+│   │   ├── api_post.go      # API 直接投稿（トークン更新・再試行を含む）
 │   │   └── settings.go      # ユーザー設定
 │   ├── metrics/             # Prometheusメトリクス
 │   │   ├── metrics.go
@@ -86,6 +86,9 @@ spotify-nowplaying/
 │   │   ├── client_test.go   # クライアントテスト
 │   │   ├── player.go        # 再生情報取得・シェアURL生成
 │   │   └── player_test.go   # プレイヤーテスト
+│   ├── twitter/             # Twitter API関連
+│   │   ├── client.go        # トークン更新・ツイート投稿クライアント
+│   │   └── client_test.go   # クライアントテスト
 │   └── store/               # データベース
 │       └── store.go         # PostgreSQL 操作
 ├── migrations/              # DBマイグレーション
@@ -318,6 +321,19 @@ curl "https://example.tld/api/post/your-api-token?target=misskey"
 # 両方に投稿（ヘッダートークン認証あり）
 curl -H "X-API-Token: your-header-token" "https://example.tld/api/post/your-api-token"
 ```
+
+#### レスポンス
+
+投稿先ごとの結果は `results` に入ります。
+
+| ステータス | 意味 |
+|---|---|
+| `200` | 少なくとも1つの投稿先へ投稿できた（再生中の曲がない場合も200） |
+| `502` | 投稿を試みたすべての投稿先が失敗した |
+
+Twitterのアクセストークンは約2時間で失効するため、投稿前に必要に応じてリフレッシュトークンで自動更新します。
+再連携が必要な状態（リフレッシュトークンが失効・失効済み）の場合は、`results.twitter` が `error: twitter token expired, reconnect required` になります。
+ダッシュボードからTwitterを再連携してください。
 
 ## メトリクス
 

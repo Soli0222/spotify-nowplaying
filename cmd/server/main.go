@@ -16,6 +16,7 @@ import (
 	"github.com/Soli0222/spotify-nowplaying/internal/metrics"
 	"github.com/Soli0222/spotify-nowplaying/internal/spotify"
 	"github.com/Soli0222/spotify-nowplaying/internal/store"
+	"github.com/Soli0222/spotify-nowplaying/internal/twitter"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -99,6 +100,7 @@ func main() {
 
 	// SpotifyクライアントとHandlerを初期化
 	spotifyClient := spotify.NewHTTPClient()
+	twitterClient := twitter.NewHTTPClient()
 	h := handler.NewHandler(spotifyClient)
 
 	// Construct DATABASE_URL from POSTGRES_* env vars if not explicitly set
@@ -152,9 +154,9 @@ func main() {
 		// API handlers
 		spotifyAuthHandler := handler.NewSpotifyAuthHandler(db, spotifyClient, jwtConfig)
 		miAuthHandler := handler.NewMiAuthHandler(db, jwtConfig)
-		twitterAuthHandler := handler.NewTwitterAuthHandler(db, jwtConfig)
+		twitterAuthHandler := handler.NewTwitterAuthHandler(db, twitterClient, jwtConfig)
 		settingsHandler := handler.NewSettingsHandler(db, jwtConfig)
-		apiPostHandler := handler.NewAPIPostHandler(db, spotifyClient)
+		apiPostHandler := handler.NewAPIPostHandler(db, spotifyClient, twitterClient)
 
 		// API routes
 		api := e.Group("/api")
