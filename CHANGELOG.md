@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.5.1](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.0...v4.5.1) (2026-08-27)
+
+
+### バグ修正・依存関係の更新
+
+* **deps:** update go go to v1.26.7 ([#347](https://github.com/Soli0222/spotify-nowplaying/issues/347)) ([f676b09](https://github.com/Soli0222/spotify-nowplaying/commit/f676b09ece168df3a05e22ea6b331c37ccd1c419))
+* **deps:** update go version to v1.26.7 ([#348](https://github.com/Soli0222/spotify-nowplaying/issues/348)) ([19410d0](https://github.com/Soli0222/spotify-nowplaying/commit/19410d0a79e4a07536b3dfc61803e779483a01fe))
+* **twitter:** 投稿前にアクセストークンを更新する ([#349](https://github.com/Soli0222/spotify-nowplaying/issues/349)) ([96496fc](https://github.com/Soli0222/spotify-nowplaying/commit/96496fcf5a1ec4ca4a182b751bf1c2ba1fd03eaa))
+
 ## [4.5.0](https://github.com/Soli0222/spotify-nowplaying/compare/v4.4.2...v4.5.0) (2026-08-14)
 
 
