@@ -43,17 +43,6 @@
     {
       customType: 'regex',
       managerFilePatterns: [
-        '/go\\.mod$/',
-      ],
-      matchStrings: [
-        'go (?<currentValue>\\d+\\.\\d+\\.\\d+)\\n',
-      ],
-      depNameTemplate: 'golang',
-      datasourceTemplate: 'golang-version',
-    },
-    {
-      customType: 'regex',
-      managerFilePatterns: [
         '/^charts/.+/values\\.yaml$/',
       ],
       matchStrings: [
@@ -108,15 +97,6 @@
       automerge: true,
     },
     {
-      matchDepNames: [
-        'golang',
-      ],
-      groupName: 'golang version',
-      commitMessageTopic: 'Go version',
-      semanticCommitType: 'fix',
-      automerge: true,
-    },
-    {
       matchManagers: [
         'npm',
       ],
@@ -129,6 +109,26 @@
         'gomod',
       ],
       commitMessageTopic: 'Go {{depName}}',
+      semanticCommitType: 'fix',
+      automerge: true,
+    },
+    // Go のバージョンは go.mod の go directive (gomod) と Dockerfile のビルド用
+    // ベースイメージ (dockerfile) の 2 箇所にある。別々の PR で上がると go.mod だけ
+    // 先に merge されて Dockerfile が 1 つ前のまま取り残され、golang イメージは
+    // GOTOOLCHAIN=local なので release の docker build が
+    // "go.mod requires go >= X (running go Y; GOTOOLCHAIN=local)" で落ちる。
+    // 同じ groupName にまとめて必ず 1 PR で両方上げる。
+    // matchManagers: ['gomod'] のルールより後に置くこと (後勝ちで上書きされるため)。
+    // 片方の版が未公開で PR が go.mod だけになる可能性は残るので、
+    // 最終的な担保は test.yaml の go-version-guard が行う。
+    {
+      matchDepNames: [
+        'go',
+        'toolchain',
+        'golang',
+      ],
+      groupName: 'golang version',
+      commitMessageTopic: 'Go version',
       semanticCommitType: 'fix',
       automerge: true,
     },
