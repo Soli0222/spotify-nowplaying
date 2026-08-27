@@ -39,6 +39,12 @@ type userResponse struct {
 	Data UserInfo `json:"data"`
 }
 
+// oauthError is the error response of the token endpoint (RFC 6749 5.2).
+type oauthError struct {
+	Code        string `json:"error"`
+	Description string `json:"error_description"`
+}
+
 // ErrReauthRequired is returned when the stored refresh token can no longer be
 // used, so the user has to connect their Twitter account again.
 var ErrReauthRequired = errors.New("twitter reauthorization required")
@@ -179,10 +185,12 @@ func (c *HTTPClient) requestTokens(ctx context.Context, form url.Values, operati
 	if resp.StatusCode != http.StatusOK {
 		c.logger.Error(operation+" failed", "status", resp.StatusCode, "body", string(body))
 		apiErr := &APIError{StatusCode: resp.StatusCode, Message: string(body)}
-		// The grant itself was rejected: refreshing again will not help.
-		if resp.StatusCode == http.StatusBadRequest ||
-			resp.StatusCode == http.StatusUnauthorized ||
-			resp.StatusCode == http.StatusForbidden {
+		// RFC 6749 5.2: only invalid_grant means the grant itself is dead and the
+		// user has to authorize again. invalid_client, invalid_request and
+		// unauthorized_client come back with the same status but point at this
+		// application's configuration, where reconnecting would not help.
+		var oauthErr oauthError
+		if err := json.Unmarshal(body, &oauthErr); err == nil && oauthErr.Code == "invalid_grant" {
 			return nil, fmt.Errorf("%w: %v", ErrReauthRequired, apiErr)
 		}
 		return nil, apiErr

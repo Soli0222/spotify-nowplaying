@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -61,10 +62,12 @@ func TestRefreshToken_KeepsCurrentRefreshTokenWhenNotRotated(t *testing.T) {
 }
 
 func TestRefreshToken_InvalidGrantRequiresReauth(t *testing.T) {
+	// invalid_grant is what a revoked or already-rotated refresh token comes
+	// back as, whichever status Twitter picks for it.
 	for _, status := range []int{http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(status)
-			_, _ = w.Write([]byte(`{"error":"invalid_grant"}`))
+			_, _ = w.Write([]byte(`{"error":"invalid_grant","error_description":"Value passed for the refresh token was invalid."}`))
 		}))
 
 		c := NewHTTPClient(WithTokenURL(server.URL))
@@ -73,6 +76,44 @@ func TestRefreshToken_InvalidGrantRequiresReauth(t *testing.T) {
 		assert.ErrorIs(t, err, ErrReauthRequired, "status %d", status)
 		server.Close()
 	}
+}
+
+func TestRefreshToken_MisconfigurationIsNotReauth(t *testing.T) {
+	// These share invalid_grant's status but are this application's problem:
+	// reconnecting would never fix them.
+	for _, code := range []string{"invalid_client", "invalid_request", "unauthorized_client", "unsupported_grant_type"} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprintf(w, `{"error":%q}`, code)
+		}))
+
+		c := NewHTTPClient(WithTokenURL(server.URL))
+		_, err := c.RefreshToken(context.Background(), "still-valid")
+
+		require.Error(t, err, code)
+		assert.NotErrorIs(t, err, ErrReauthRequired, code)
+		apiErr, ok := IsAPIError(err)
+		require.True(t, ok, code)
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode, code)
+		server.Close()
+	}
+}
+
+func TestRefreshToken_NonJSONErrorIsNotReauth(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("Unauthorized"))
+	}))
+	defer server.Close()
+
+	c := NewHTTPClient(WithTokenURL(server.URL))
+	_, err := c.RefreshToken(context.Background(), "still-valid")
+
+	require.Error(t, err)
+	assert.NotErrorIs(t, err, ErrReauthRequired)
+	apiErr, ok := IsAPIError(err)
+	require.True(t, ok)
+	assert.Equal(t, http.StatusUnauthorized, apiErr.StatusCode)
 }
 
 func TestRefreshToken_ServerErrorIsNotReauth(t *testing.T) {
