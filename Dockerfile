@@ -1,8 +1,8 @@
 # Frontend build stage
 FROM node:25.9.0-alpine3.23 AS frontend-build
 WORKDIR /app/frontend
-RUN npm install -g pnpm@10.33.4
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN npm install -g pnpm@11.24.0
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm build
