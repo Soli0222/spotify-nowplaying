@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.5.4](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.3...v4.5.4) (2026-10-17)
+
+
+### バグ修正・依存関係の更新
+
+* **deps:** update node i18next to ^26.4.5 ([#395](https://github.com/Soli0222/spotify-nowplaying/issues/395)) ([c41ac23](https://github.com/Soli0222/spotify-nowplaying/commit/c41ac23b30d14c30f2682b6df7780ffa8b0537a4))
+* **deps:** update react monorepo to ^19.3.1 ([#396](https://github.com/Soli0222/spotify-nowplaying/issues/396)) ([89d8bdc](https://github.com/Soli0222/spotify-nowplaying/commit/89d8bdc016cadd944bc109ba670eaeb3ff351f51))
+
 ## [4.5.3](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.2...v4.5.3) (2026-10-16)
 
 
