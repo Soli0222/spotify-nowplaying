@@ -167,7 +167,7 @@ importers:
   .:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.104.2
+        specifier: ^5.104.3
         version: 5.104.3(react@19.3.1)
       i18next:
         specifier: ^26.4.5
