@@ -1,5 +1,5 @@
 # Frontend build stage
-FROM node:26.12.0-alpine AS frontend-build
+FROM node:26.12.1-alpine AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
