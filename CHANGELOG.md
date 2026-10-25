@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.5.6](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.5...v4.5.6) (2026-10-24)
+
+
+### バグ修正・依存関係の更新
+
+* **deps:** update go github.com/labstack/echo/v4 to v4.16.1 ([#418](https://github.com/Soli0222/spotify-nowplaying/issues/418)) ([1fcd049](https://github.com/Soli0222/spotify-nowplaying/commit/1fcd04937c2cb4202c8614b79a7e39b8765b6c32))
+* **deps:** update go github.com/labstack/echo/v4 to v4.16.2 ([#423](https://github.com/Soli0222/spotify-nowplaying/issues/423)) ([df3306d](https://github.com/Soli0222/spotify-nowplaying/commit/df3306d59b0f3f23d24be2feb63bb1b5e33b90f1))
+* **deps:** update node @tanstack/react-query to ^5.104.5 ([#419](https://github.com/Soli0222/spotify-nowplaying/issues/419)) ([20e8e4e](https://github.com/Soli0222/spotify-nowplaying/commit/20e8e4e0582401457b030ec8b06b0e62146f463f))
+* **deps:** update node i18next to ^26.5.3 ([#420](https://github.com/Soli0222/spotify-nowplaying/issues/420)) ([7cdbba9](https://github.com/Soli0222/spotify-nowplaying/commit/7cdbba9cdbe84c01dbdc15e86dd5d61708776e93))
+* **deps:** update node i18next to ^26.5.4 ([#425](https://github.com/Soli0222/spotify-nowplaying/issues/425)) ([0a6fa8e](https://github.com/Soli0222/spotify-nowplaying/commit/0a6fa8e7038e1006115c1bc01c482e102e2cdff3))
+* **deps:** update node pnpm to v12.15.0 ([#426](https://github.com/Soli0222/spotify-nowplaying/issues/426)) ([9140c67](https://github.com/Soli0222/spotify-nowplaying/commit/9140c67ce4963441ccc7b731ad8f6e2f1ff5f0a7))
+* **deps:** update node typescript-eslint to ^8.72.0 ([#421](https://github.com/Soli0222/spotify-nowplaying/issues/421)) ([528ab22](https://github.com/Soli0222/spotify-nowplaying/commit/528ab2243e3966575535ee4736255a700012dd96))
+* **deps:** update node vite to ^8.3.5 ([#424](https://github.com/Soli0222/spotify-nowplaying/issues/424)) ([e7486f9](https://github.com/Soli0222/spotify-nowplaying/commit/e7486f922eed061e41b686f4210b6882a3d3c271))
+
 ## [4.5.5](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.4...v4.5.5) (2026-10-22)
 
 
