@@ -5,4 +5,4 @@ type: application
 sources:
   - https://github.com/Soli0222/spotify-nowplaying
 version: 3.1.7
-appVersion: 4.5.6
+appVersion: 4.5.7
