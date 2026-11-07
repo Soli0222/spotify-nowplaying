@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.5.8](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.7...v4.5.8) (2026-11-07)
+
+
+### バグ修正・依存関係の更新
+
+* **deps:** update docker alpine to v3.24.4 ([#460](https://github.com/Soli0222/spotify-nowplaying/issues/460)) ([31ac7c1](https://github.com/Soli0222/spotify-nowplaying/commit/31ac7c14ca3f3b93ef240d0f1b754c923d09735d))
+* **deps:** update node @tanstack/react-query to ^5.105.1 ([#453](https://github.com/Soli0222/spotify-nowplaying/issues/453)) ([eed14d5](https://github.com/Soli0222/spotify-nowplaying/commit/eed14d59cd6090326e1dfb9d73a8c9778c963924))
+* **deps:** update node @tanstack/react-query to ^5.105.3 ([#458](https://github.com/Soli0222/spotify-nowplaying/issues/458)) ([4906ad3](https://github.com/Soli0222/spotify-nowplaying/commit/4906ad3afd0ead3865c9a5e105b3d3f6e1b25ce6))
+* **deps:** update node @vitejs/plugin-react to ^6.2.1 ([#457](https://github.com/Soli0222/spotify-nowplaying/issues/457)) ([1b04ce8](https://github.com/Soli0222/spotify-nowplaying/commit/1b04ce81f6edeafb29e074d76e8281233e9e68d1))
+* **deps:** update node eslint to ^10.14.0 ([#448](https://github.com/Soli0222/spotify-nowplaying/issues/448)) ([b3b1d07](https://github.com/Soli0222/spotify-nowplaying/commit/b3b1d07e85d253745d1761ac3c52cfa188d074a1))
+* **deps:** update node globals to ^17.14.0 ([#454](https://github.com/Soli0222/spotify-nowplaying/issues/454)) ([fdc61e3](https://github.com/Soli0222/spotify-nowplaying/commit/fdc61e3dcc8fe6ab9b16cbd69c60718cd3574d8a))
+* **deps:** update node i18next to ^26.5.12 ([#447](https://github.com/Soli0222/spotify-nowplaying/issues/447)) ([a5014f0](https://github.com/Soli0222/spotify-nowplaying/commit/a5014f0e65818cd27e99672e238b0578771a04a2))
+* **deps:** update node i18next to ^26.6.0 ([#451](https://github.com/Soli0222/spotify-nowplaying/issues/451)) ([c69fd9d](https://github.com/Soli0222/spotify-nowplaying/commit/c69fd9d8cd1bf28e605429fbdfd6b2bdcea8e7a0))
+* **deps:** update node i18next to ^26.7.1 ([#456](https://github.com/Soli0222/spotify-nowplaying/issues/456)) ([4c30d73](https://github.com/Soli0222/spotify-nowplaying/commit/4c30d73fa49410fecd0027f3e5283174e5d66e12))
+* **deps:** update node react-i18next to ^17.1.10 ([#452](https://github.com/Soli0222/spotify-nowplaying/issues/452)) ([931cd98](https://github.com/Soli0222/spotify-nowplaying/commit/931cd9852966df14c2812627ee67fb00af36bdf7))
+* **deps:** update node react-i18next to ^17.1.11 ([#455](https://github.com/Soli0222/spotify-nowplaying/issues/455)) ([15df5c0](https://github.com/Soli0222/spotify-nowplaying/commit/15df5c04fefd2292a07d62ce1a5e2826e237f6f6))
+* **deps:** update node react-i18next to ^17.1.12 ([#462](https://github.com/Soli0222/spotify-nowplaying/issues/462)) ([8d63d44](https://github.com/Soli0222/spotify-nowplaying/commit/8d63d443623ee438a46aac3564d54ba427f4ef84))
+
 ## [4.5.7](https://github.com/Soli0222/spotify-nowplaying/compare/v4.5.6...v4.5.7) (2026-10-31)
 
 
