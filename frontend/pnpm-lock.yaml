@@ -179,7 +179,7 @@ importers:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
       react-i18next:
-        specifier: ^18.0.0
+        specifier: ^18.0.1
         version: 18.0.1(@types/react@19.3.0)(i18next@27.1.0(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3)
       react-router-dom:
         specifier: ^7.18.5
